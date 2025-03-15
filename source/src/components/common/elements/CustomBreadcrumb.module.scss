@@ -1,0 +1,42 @@
+@import '@assets/scss/global';
+
+.breadcrumb {
+    
+    ol {
+        // display: flex;
+        // column-gap: 5px;
+        // remove the default style of ol
+        list-style: none;
+        padding-inline: 0px;
+        margin-top: 0;
+        margin-bottom: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;  
+        overflow: hidden;
+    }
+
+    li {
+        display: inline;
+        
+    }
+
+    .separator {
+        margin-left: 8px;
+        margin-right: 8px;
+    }
+
+    .link {
+        color: black;
+        a {
+            text-decoration: none;
+            outline: none;
+            color: black;
+            cursor: pointer;
+            border-radius: 4px;
+            &:hover {
+                background-color: rgba(0, 0, 0, 0.06);
+            }
+        }
+    }
+}

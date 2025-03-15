@@ -1,0 +1,22 @@
+.wrapper {
+    display: block;
+    position: relative;
+    background-size: cover;
+    border: 2px solid #F69600;
+    background-color: #ffffff;
+    flex-shrink: 0;
+
+}
+.itemRnd{
+
+    .itemRndContent{
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+}
+.itemRnd:hover{
+    border: 2px solid #F69600 !important;
+}
