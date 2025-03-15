@@ -19,13 +19,21 @@ const Dashboard = () => {
     const transtle = useTranslate();
     const [ buttons, setButtons ] = useState([]);
     const [ addNew, setAddNew ] = useState(true);
-    const [ nodePositions, setNodePositions ] = useState([]);
+    const [ nodePositions, setNodePositions ] = useState([
+        {
+            id: 'card_0_root',
+            left: 50,
+            top: 50,
+        },
+    ]);
+    const buttonsRef = useRef(buttons);
     const [ nodes, setNodes ] = useState([
         {
-            id: 'card_0',
+            id: 'card_0_root',
             left: 50,
             top: 50,
             buttons: buttonArray,
+            position: [ 50, 50 ],
         },
     ]);
     const { execute: executeUpdate, loading: loadingUpdate } = useFetch(apiConfig.game.question.update, {
@@ -48,20 +56,20 @@ const Dashboard = () => {
     const questionId = queryParameters.get('questionId');
     const accessToken = queryParameters.get('accessToken');
     const gameId = queryParameters.get('gameId');
-    // const zoomRef = useRef(1);
+    const zoomRef = useRef(1);
 
-    // const handleZoom = (direction) => {
-    //     let newZoom = zoomRef.current;
-    //     if (direction === 'in') {
-    //         newZoom += 0.1;
-    //     } else if (direction === 'out' && newZoom > 0.2) {
-    //         newZoom -= 0.1;
-    //     }
+    const handleZoom = (direction) => {
+        let newZoom = zoomRef.current;
+        if (direction === 'in') {
+            newZoom += 0.1;
+        } else if (direction === 'out' && newZoom > 0.2) {
+            newZoom -= 0.1;
+        }
 
-    //     zoomRef.current = newZoom;
-    //     diagramRef.current.style.transform = `scale(${newZoom})`;
-    //     diagramRef.current.style.transformOrigin = '0 0';
-    // };
+        zoomRef.current = newZoom;
+        diagramRef.current.style.transform = `scale(${newZoom})`;
+        diagramRef.current.style.transformOrigin = '0 0';
+    };
 
     const instance = jsPlumb.jsPlumb.getInstance({
         Container: diagramRef.current,
@@ -185,10 +193,12 @@ const Dashboard = () => {
             const sourceIndex = bottomPositions.findIndex((pos) => pos[0] == sourceAnchor);
 
             const sourceNumber = nodes.findIndex((item) => item.id == info?.sourceId);
+            const targetNumber = nodes.findIndex((item) => item.id == info?.targetId);
+            const buttons = buttonsRef.current;
             const buttonArrays = buttons[sourceNumber].map((item, index) => {
                 if (index == sourceIndex) {
                     return {
-                        name: 'checksss',
+                        name: form.getFieldValue(`name${targetNumber}`) || 'computer',
                         nodeId: info.targetId,
                     };
                 } else return item;
@@ -235,6 +245,9 @@ const Dashboard = () => {
             instance.reset(); // Cleanup khi unmount
         };
     }, [ nodes, nodePositions ]);
+    useEffect(() => {
+        buttonsRef.current = buttons;
+    }, [ buttons ]);
 
     const addNode = async () => {
         const newId = `card_${nodes.length}`;
@@ -299,7 +312,6 @@ const Dashboard = () => {
         const connect = () => {
             for (let i = 0; i < nodes.length; i++) {
                 const currentNode = nodes[i].id;
-                const array1 = buttons[i];
                 if (buttons[i]?.[0] != null) {
                     const nextNode = nodes.find((node) => node.id === buttons[i][0].nodeId)?.id;
                     instance.connect({
@@ -312,7 +324,7 @@ const Dashboard = () => {
                     });
                 }
                 if (buttons[i]?.[1] != null) {
-                    const nextNode = nodes.find((node) => node.id === buttons[i]?.[0]?.nodeId)?.id;
+                    const nextNode = nodes.find((node) => node.id === buttons[i]?.[1]?.nodeId)?.id;
                     instance.connect({
                         source: currentNode,
                         target: nextNode,
@@ -365,7 +377,9 @@ const Dashboard = () => {
 
     const DragTable = useCallback(() => {
         if (nodes?.length > 0 && nodePositions?.length > 0) {
-            return nodes.map(({ id }, index) => {
+            return nodes.map(({ id }) => {
+                const match = id.match(/(card_)(\d+)/);
+                const [ , field, index ] = match;
                 const left = nodePositions[index]?.left;
                 const top = nodePositions[index]?.top;
                 return (
@@ -438,8 +452,7 @@ const Dashboard = () => {
             },
         });
     };
-
-    const ChildrenItem = ({ index }) => {
+    const ChildrenItem = ({ index, id }) => {
         return (
             <Flex gap={4} vertical style={{ paddingTop: index == 0 ? '12px' : 0 }}>
                 {index > 0 && (
@@ -452,8 +465,38 @@ const Dashboard = () => {
                                 marginRight: '-10px',
                             }}
                             onClick={() => {
-                                setNodes((prevNodes) => prevNodes.filter((_, i) => i !== index));
-                                setButtons((prevNodes) => prevNodes.filter((_, i) => i !== index));
+                                const array = getAllConnections(instanceRef.current);
+                                if (Object.keys(array).length > 0 && array[id]) {
+                                    const { incoming, outgoing } = array[id];
+                                    if (incoming.length > 0) {
+                                        incoming.forEach((item) => {
+                                            const { source, sourceAnchor } = item;
+                                            const sourceNumber = nodes.findIndex((item) => item.id == source);
+                                            const sourceIndex = bottomPositions.findIndex(
+                                                (pos) => pos[0] == sourceAnchor.x,
+                                            );
+                                            const buttons = buttonsRef.current;
+                                            const buttonArrays = buttons[sourceNumber].map((item, index) => {
+                                                if (index == sourceIndex) {
+                                                    return null;
+                                                } else return item;
+                                            });
+                                            setButtons((prev) => {
+                                                const newButtons = [ ...prev ];
+                                                newButtons[sourceNumber] = buttonArrays;
+                                                return newButtons;
+                                            });
+                                        });
+                                    }
+                                }
+                                form.setFieldsValue({
+                                    [`name${index}`]: '',
+                                    [`img_url${index}`]: null,
+                                    [`body_text${index}`]: '',
+                                    [`img_name${index}`]: '',
+                                });
+                                setButtons((prevNodes) => prevNodes.filter((item, i) => i != index));
+                                setNodes((prevNodes) => prevNodes.filter((item, i) => item.id !== id));
                             }}
                         />
                     </Flex>
@@ -506,8 +549,8 @@ const Dashboard = () => {
                 <Button htmlType="submit" disabled={nodes.length <= 1}>
                     Save
                 </Button>
-                {/* <Button onClick={() => handleZoom('in')}>Zoom In</Button>
-                <Button onClick={() => handleZoom('out')}>Zoom Out</Button> */}
+                <Button onClick={() => handleZoom('in')}>Zoom In</Button>
+                <Button onClick={() => handleZoom('out')}>Zoom Out</Button>
                 <DragTable />
             </Form>
         </div>
