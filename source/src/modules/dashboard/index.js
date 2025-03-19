@@ -9,7 +9,6 @@ import useFetch from '@hooks/useFetch';
 import useTranslate from '@hooks/useTranslate';
 import { showErrorMessage, showSucsessMessage } from '@services/notifyService';
 import jsPlumb from 'jsplumb';
-// import './index.css';
 import styles from './index.module.scss';
 
 const Dashboard = () => {
@@ -250,7 +249,10 @@ const Dashboard = () => {
     }, [ buttons ]);
 
     const addNode = async () => {
-        const newId = `card_${nodes.length}`;
+        const nodeCurrent = nodes[nodes.length - 1];
+        const match = nodeCurrent?.id.match(/(card_)(\d+)/);
+        const [ , field, index ] = match;
+        const newId = `card_${Number(index) + 1}`;
         const innerWidth = Math.random() * (window.innerWidth - 200);
         const innerHeight = Math.random() * 300;
         const maxValues = nodePositions.reduce(
@@ -400,21 +402,38 @@ const Dashboard = () => {
             const match = key.match(/(body_text|img_name|img_url|name)(\d+)/);
             if (match) {
                 const [ , field, index ] = match;
-                const buttonArray = buttons[index].map((item) => {
-                    if (item != null) {
-                        const indexChild = dataQuestion?.data?.findIndex(({ id }) => id === item.nodeId);
-                        return {
-                            name: values[`name${indexChild}`],
-                            nodeId: item.nodeId,
-                        };
-                    }
-                    return item;
+                let buttonArray = [];
+                if (buttons[index]) {
+                    buttonArray = buttons[index].map((item) => {
+                        if (item != null) {
+                            const indexChild = dataQuestion?.data?.findIndex(({ id }) => id === item.nodeId);
+                            return {
+                                name: values[`name${indexChild}`],
+                                nodeId: item.nodeId,
+                            };
+                        }
+                        return item;
+                    });
+                }
+                const nodeCurrent = nodes.find((node) => {
+                    const match = node.id.match(/(card_)(\d+)/);
+                    const [ , field, indexMatch ] = match;
+                    if (indexMatch === index) return node;
+                    return null;
                 });
-                if (!data[index]) data[index] = {};
-                data[index][field] = value;
-                data[index].id = nodes[index].id;
-                data[index].buttons = buttonArray;
-                data[index].position = [ offset[index].left, offset[index].top ];
+                const offsetCurrent = offset.find((node) => {
+                    const match = node.id.match(/(card_)(\d+)/);
+                    const [ , field, indexMatch ] = match;
+                    if (indexMatch === index) return node;
+                    return null;
+                });
+                if (nodeCurrent) {
+                    if (!data[index]) data[index] = {};
+                    data[index][field] = value;
+                    data[index].id = nodeCurrent.id;
+                    data[index].buttons = buttonArray;
+                    data[index].position = [ offsetCurrent.left, offsetCurrent.top ];
+                }
             }
         });
 
@@ -466,6 +485,8 @@ const Dashboard = () => {
                             }}
                             onClick={() => {
                                 const array = getAllConnections(instanceRef.current);
+                                const match = id.match(/(card_)(\d+)/);
+                                const [ , field, index ] = match;
                                 if (Object.keys(array).length > 0 && array[id]) {
                                     const { incoming, outgoing } = array[id];
                                     if (incoming.length > 0) {
@@ -501,8 +522,13 @@ const Dashboard = () => {
                         />
                     </Flex>
                 )}
-                <TextField name={`name${index}`} style={{ width: '100%' }} />
-                <TextField name={`body_text${index}`} style={{ width: '100%', flex: 1 }} type="textarea" />
+                <TextField name={`name${index}`} style={{ width: '100%' }} placeholder={'Name'} />
+                <TextField
+                    name={`body_text${index}`}
+                    style={{ width: '100%', flex: 1 }}
+                    type="textarea"
+                    placeholder={'Description'}
+                />
                 <Flex style={{ width: '100%' }} justify="center" align="center" gap={4}>
                     <TextField
                         name={`img_url${index}`}
@@ -531,9 +557,23 @@ const Dashboard = () => {
                         </Button>
                     </Upload>
                 </Flex>
-                <TextField name={`img_name${index}`} style={{ width: '100%' }} />
+                <TextField name={`img_name${index}`} style={{ width: '100%' }} placeholder={'Image Name'} />
             </Flex>
         );
+    };
+
+    const removeField = (index = 0, fieldsToRemove = [ 'name', 'body_text' ]) => {
+        const currentValues = form.getFieldsValue();
+        const fieldsToDelete = fieldsToRemove.reduce((acc, field) => {
+            acc[`${field}${index}`] = undefined; // Tạo object với các key cần xóa
+            return acc;
+        }, {});
+
+        const filteredValues = Object.keys(currentValues)
+            .filter((key) => !Object.keys(fieldsToDelete).includes(key))
+            .map((key) => ({ name: key, value: currentValues[key] }));
+
+        form.setFields(filteredValues);
     };
 
     return (
