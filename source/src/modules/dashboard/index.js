@@ -446,6 +446,7 @@ const Dashboard = () => {
                 title: dataQuestion.title,
                 type: dataQuestion.type,
             },
+            accessToken: accessToken,
             onCompleted: (res) => {
                 showSucsessMessage('Update success');
             },
@@ -474,7 +475,7 @@ const Dashboard = () => {
     };
     const ChildrenItem = ({ index, id }) => {
         return (
-            <Flex gap={4} vertical style={{ paddingTop: index == 0 ? '12px' : 0 }}>
+            <Flex gap={6} vertical style={{ paddingTop: index == 0 ? '12px' : 0 }}>
                 {index > 0 && (
                     <Flex style={{ width: '100%' }} justify="end">
                         <CloseSquareFilled
@@ -560,10 +561,6 @@ const Dashboard = () => {
                     </Upload>
                 </Flex> */}
                 <UploadImageField
-                    // formItemProps={{
-                    //     labelAlign: 'left',
-                    //     style: { marginBottom: 40 },
-                    // }}
                     name={`img_url${index}`}
                     objectName="image"
                     aspect={16 / 9}
