@@ -10,6 +10,7 @@ import useTranslate from '@hooks/useTranslate';
 import { showErrorMessage, showSucsessMessage } from '@services/notifyService';
 import jsPlumb from 'jsplumb';
 import styles from './index.module.scss';
+import UploadImageField from '@components/common/form/entry/UploadImageField';
 
 const Dashboard = () => {
     const diagramRef = useRef(null);
@@ -529,7 +530,7 @@ const Dashboard = () => {
                     type="textarea"
                     placeholder={'Description'}
                 />
-                <Flex style={{ width: '100%' }} justify="center" align="center" gap={4}>
+                {/* <Flex style={{ width: '100%' }} justify="center" align="center" gap={4}>
                     <TextField
                         name={`img_url${index}`}
                         style={{
@@ -544,6 +545,7 @@ const Dashboard = () => {
                         initialValue={''}
                         readOnly
                     />
+                    
                     <span className={styles.text}>
                         {form.getFieldValue(`img_url${index}`) || 'Format: .JPG Maximum Size: 720 x 350 pixels'}
                     </span>
@@ -556,7 +558,17 @@ const Dashboard = () => {
                             Upload
                         </Button>
                     </Upload>
-                </Flex>
+                </Flex> */}
+                <UploadImageField
+                    // formItemProps={{
+                    //     labelAlign: 'left',
+                    //     style: { marginBottom: 40 },
+                    // }}
+                    name={`img_url${index}`}
+                    objectName="image"
+                    aspect={16 / 9}
+                    accessToken={accessToken}
+                />
                 <TextField name={`img_name${index}`} style={{ width: '100%' }} placeholder={'Image Name'} />
             </Flex>
         );
