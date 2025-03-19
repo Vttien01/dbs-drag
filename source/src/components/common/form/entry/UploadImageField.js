@@ -12,6 +12,7 @@ import CropImageLink from '../CropImageField/CropImageLink';
 import useNotification from '@hooks/useNotification';
 import { beforeUpload, resizeImage } from '@utils';
 import { MAX_WIDTH_IMAGE_DEFAULT } from '@constants';
+import { showErrorMessage } from '@services/notifyService';
 
 function UploadImageField({
     required,
@@ -24,6 +25,7 @@ function UploadImageField({
     description = '',
     uploadApi = apiConfig.file.image,
     size = 1,
+    accessToken,
 }) {
     const checkFileLink = (_, value) => {
         if (value) {
@@ -38,6 +40,7 @@ function UploadImageField({
             required={required}
             label={label}
             name={name}
+            style={{ margin: 0 }}
             rules={[
                 {
                     ...(required ? { validator: checkFileLink } : {}),
@@ -51,18 +54,26 @@ function UploadImageField({
                 aspect={aspect}
                 description={description}
                 size={size}
+                accessToken={accessToken}
             />
         </Form.Item>
     );
 }
 
-function ImageField({ value = '', cropShape, onChange, objectName = '', aspect, description, uploadApi, size }) {
-    const [ showModal, setShowModal ] = useState(false);
-    const [ fileLink, setFileLink ] = useState();
+function ImageField({
+    value = '',
+    cropShape,
+    onChange,
+    objectName = '',
+    aspect,
+    description,
+    uploadApi,
+    size,
+    accessToken,
+}) {
     const { execute: executeUpFile } = useFetch(uploadApi);
     const [ uploadLoading, setUploadLoading ] = useState(false);
     const [ errorMessage, setErrorMessage ] = useState('');
-    const [ showCropImageLink, setShowCropimageLink ] = useState(false);
     const notification = useNotification();
 
     const uploadError = () => {
@@ -80,80 +91,32 @@ function ImageField({ value = '', cropShape, onChange, objectName = '', aspect, 
         if (file.size > maxFileSize) {
             return;
         }
-        setUploadLoading(true);
-        resizeImage({ file: file, maxSize: MAX_WIDTH_IMAGE_DEFAULT })
-            .then(function (resizedImageBlob) {
-                executeUpFile({
-                    data: {
-                        image: resizedImageBlob,
-                    },
-                    onCompleted: (result) => {
-                        setErrorMessage('');
-                        onChange(result.data.url);
-                        onSuccess();
-                        setUploadLoading(false);
-                    },
-                    onError: () => {
-                        onError();
-                        uploadError();
-                    },
+        if (accessToken) {
+            setUploadLoading(true);
+            resizeImage({ file: file, maxSize: MAX_WIDTH_IMAGE_DEFAULT })
+                .then(function (resizedImageBlob) {
+                    executeUpFile({
+                        data: {
+                            image: file,
+                        },
+                        accessToken: accessToken,
+                        onCompleted: (result) => {
+                            setErrorMessage('');
+                            onChange(result.data.url);
+                            onSuccess();
+                            setUploadLoading(false);
+                        },
+                        onError: () => {
+                            onError();
+                            uploadError();
+                        },
+                    });
+                })
+                .catch(function (error) {
+                    console.error('Error resizing image:', error);
                 });
-            })
-            .catch(function (error) {
-                console.error('Error resizing image:', error);
-            });
+        } else showErrorMessage('Please update Access Token to upload photos');
     };
-
-    const uploadFileLink = (file) => {
-        setShowCropimageLink(false);
-        resizeImage({ file: file, maxSize: MAX_WIDTH_IMAGE_DEFAULT })
-            .then(function (resizedImageBlob) {
-                executeUpFile({
-                    data: {
-                        image: resizedImageBlob,
-                    },
-                    onCompleted: (result) => {
-                        setErrorMessage('');
-                        onChange(result.data.url);
-                        setUploadLoading(false);
-                    },
-                    onError: () => {
-                        setUploadLoading(false);
-                        uploadError();
-                    },
-                });
-            })
-            .catch(function (error) {
-                setUploadLoading(false);
-                uploadError();
-                console.error('Error resizing image:', error);
-            });
-    };
-
-    const uploadDropdownItems = [
-        {
-            key: '1',
-            label: (
-                <ImgCrop cropShape={cropShape} aspect={aspect} beforeCrop={(file) => beforeUpload(file, size)}>
-                    <Upload accept=".jpg, .jpeg, .png" showUploadList={false} customRequest={uploadFile}>
-                        <Space>
-                            <FileAddOutlined />
-                            From File ...
-                        </Space>
-                    </Upload>
-                </ImgCrop>
-            ),
-        },
-        {
-            key: '2',
-            label: (
-                <Space onClick={() => setShowModal(true)}>
-                    <LinkOutlined />
-                    From Link ...
-                </Space>
-            ),
-        },
-    ];
 
     const renderContent = () => {
         if (uploadLoading) {
@@ -170,7 +133,7 @@ function ImageField({ value = '', cropShape, onChange, objectName = '', aspect, 
                         style={{
                             width: '100%',
                             height: '100%',
-                            objectFit: 'contain',
+                            objectFit: 'cover',
                             borderRadius: cropShape == 'round' ? '50%' : 'none',
                         }}
                         src={value}
@@ -180,60 +143,35 @@ function ImageField({ value = '', cropShape, onChange, objectName = '', aspect, 
         }
         return (
             <div style={{ display: 'flex', alignItems: 'center', flexDirection: 'column' }}>
-                <div>
+                {/* <div>
                     <UploadOutlined style={{ fontSize: 16 }} />
+                </div> */}
+                <div style={{ fontSize: 12, color: 'white' }}>
+                    {/* Upload {objectName} */}
+                    Click to add image Supported jpg and png only 5mb max Recommended 200x190
                 </div>
-                <div style={{ fontSize: 12 }}>Upload {objectName}</div>
             </div>
         );
     };
 
     return (
         <>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <Dropdown trigger={[ 'click' ]} menu={{ items: uploadDropdownItems }}>
-                    <div
-                        className={classNames(
-                            styles.uploadBtn,
-                            errorMessage || value ? styles.border : styles.borderHover,
-                        )}
-                        style={{ padding: 8 }}
-                    >
-                        {renderContent()}
+            {' '}
+            <ImgCrop cropShape={cropShape} aspect={aspect} beforeCrop={(file) => beforeUpload(file, size)}>
+                <Upload accept=".jpg, .jpeg, .png" showUploadList={false} customRequest={uploadFile}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
+                        <div
+                            className={classNames(
+                                styles.uploadBtn,
+                                errorMessage || value ? styles.border : styles.borderHover,
+                            )}
+                            style={{ padding: 6 }}
+                        >
+                            {renderContent()}
+                        </div>
                     </div>
-                </Dropdown>
-                <span style={{ marginLeft: 20 }}>{description}</span>
-            </div>
-            <Modal
-                title={`Upload ${objectName}`}
-                open={showModal}
-                onOk={() => {
-                    setUploadLoading(true);
-                    fileLink && setShowCropimageLink(true);
-                    setShowModal(false);
-                }}
-                maskClosable={false}
-                onCancel={() => setShowModal(false)}
-            >
-                <div>Key in URL or Link</div>
-                <Input value={fileLink} onChange={(e) => setFileLink(e.target.value)} />
-            </Modal>
-
-            <CropImageLink
-                cropShape={cropShape}
-                aspect={aspect}
-                url={fileLink}
-                show={showCropImageLink}
-                onCompleted={uploadFileLink}
-                onError={() => {
-                    uploadError();
-                    setShowCropimageLink(false);
-                }}
-                onModalCancel={() => {
-                    setShowCropimageLink(false);
-                    setUploadLoading(false);
-                }}
-            />
+                </Upload>
+            </ImgCrop>
         </>
     );
 }
