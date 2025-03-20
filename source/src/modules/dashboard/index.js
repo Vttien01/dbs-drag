@@ -11,6 +11,7 @@ import { showErrorMessage, showSucsessMessage } from '@services/notifyService';
 import jsPlumb from 'jsplumb';
 import styles from './index.module.scss';
 import UploadImageField from '@components/common/form/entry/UploadImageField';
+import { dataExp } from './dataExp';
 
 const Dashboard = () => {
     const diagramRef = useRef(null);
@@ -86,7 +87,7 @@ const Dashboard = () => {
                 if (content?.length > 0) {
                     const topChild = 50;
                     const leftChild = 50;
-                    nodeArray = content.map((item, index) => {
+                    nodeArray = content.map((item) => {
                         item?.buttons?.forEach((record) => {
                             if (record != null) {
                                 const indexChild = content.findIndex(({ id }) => id == record.nodeId);
@@ -114,6 +115,7 @@ const Dashboard = () => {
                     setNodePositions(nodePlace);
                     for (const [ index, item ] of data.data.entries()) {
                         form.setFieldsValue({
+                            [`id${index}`]: item.id,
                             [`img_url${index}`]: item.img_url,
                             [`body_text${index}`]: item.body_text,
                             [`img_name${index}`]: item.img_name,
@@ -380,9 +382,9 @@ const Dashboard = () => {
 
     const DragTable = useCallback(() => {
         if (nodes?.length > 0 && nodePositions?.length > 0) {
-            return nodes.map(({ id }) => {
+            return nodes.map(({ id }, index) => {
                 const match = id.match(/(card_)(\d+)/);
-                const [ , field, index ] = match;
+                // const [ , field, index ] = match;
                 const left = nodePositions[index]?.left;
                 const top = nodePositions[index]?.top;
                 return (
@@ -403,11 +405,11 @@ const Dashboard = () => {
             const match = key.match(/(body_text|img_name|img_url|name)(\d+)/);
             if (match) {
                 const [ , field, index ] = match;
-                let buttonArray = [];
+                let buttonArray = [ null, null, null, null ];
                 if (buttons[index]) {
                     buttonArray = buttons[index].map((item) => {
                         if (item != null) {
-                            const indexChild = dataQuestion?.data?.findIndex(({ id }) => id === item.nodeId);
+                            const indexChild = nodes?.data?.findIndex(({ id }) => id === item.nodeId);
                             return {
                                 name: values[`name${indexChild}`],
                                 nodeId: item.nodeId,
@@ -437,11 +439,12 @@ const Dashboard = () => {
                 }
             }
         });
+        const dataSend = data.filter((item) => item != null);
 
         executeUpdate({
             pathParams: { id: questionId },
             data: {
-                data,
+                data: dataSend,
                 languageId: dataQuestion.languageId,
                 title: dataQuestion.title,
                 type: dataQuestion.type,
@@ -449,6 +452,7 @@ const Dashboard = () => {
             accessToken: accessToken,
             onCompleted: (res) => {
                 showSucsessMessage('Update success');
+                handleGetList();
             },
             onError: (res) => {
                 showErrorMessage('Update failed');
@@ -524,6 +528,7 @@ const Dashboard = () => {
                         />
                     </Flex>
                 )}
+                <TextField name={`id${index}`} style={{ width: '100%' }} placeholder={'Name'} />
                 <TextField name={`name${index}`} style={{ width: '100%' }} placeholder={'Name'} />
                 <TextField
                     name={`body_text${index}`}
@@ -531,35 +536,6 @@ const Dashboard = () => {
                     type="textarea"
                     placeholder={'Description'}
                 />
-                {/* <Flex style={{ width: '100%' }} justify="center" align="center" gap={4}>
-                    <TextField
-                        name={`img_url${index}`}
-                        style={{
-                            width: '100%',
-                            padding: 0,
-                            backgroundColor: 'transparent',
-                            border: '1px solid #6c6c6c',
-                            color: 'white',
-                            fontSize: 12,
-                            display: 'none',
-                        }}
-                        initialValue={''}
-                        readOnly
-                    />
-                    
-                    <span className={styles.text}>
-                        {form.getFieldValue(`img_url${index}`) || 'Format: .JPG Maximum Size: 720 x 350 pixels'}
-                    </span>
-                    <Upload
-                        style={{ width: '30px', height: '30px' }}
-                        showUploadList={false}
-                        customRequest={(file) => uploadFile(file, index)}
-                    >
-                        <Button type="primary" style={{ backgroundColor: 'red', fontSize: 12 }} size="small">
-                            Upload
-                        </Button>
-                    </Upload>
-                </Flex> */}
                 <UploadImageField
                     name={`img_url${index}`}
                     objectName="image"
