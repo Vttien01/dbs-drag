@@ -528,7 +528,6 @@ const Dashboard = () => {
                         />
                     </Flex>
                 )}
-                <TextField name={`id${index}`} style={{ width: '100%' }} placeholder={'Name'} />
                 <TextField name={`name${index}`} style={{ width: '100%' }} placeholder={'Name'} />
                 <TextField
                     name={`body_text${index}`}
