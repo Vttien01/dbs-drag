@@ -12,6 +12,7 @@ import jsPlumb from 'jsplumb';
 import styles from './index.module.scss';
 import UploadImageField from '@components/common/form/entry/UploadImageField';
 import { dataExp } from './dataExp';
+import Panzoom from '@panzoom/panzoom';
 
 const Dashboard = () => {
     const diagramRef = useRef(null);
@@ -27,6 +28,11 @@ const Dashboard = () => {
             top: 50,
         },
     ]);
+    const isDraggingCanvas = useRef(false);
+    const initialMousePos = useRef({ x: 0, y: 0 });
+    const [ clickMove, setClickMove ] = useState(false);
+    const [ scaleContainer, setScaleContainer ] = useState(1);
+    const nodePositionsRef = useRef(nodePositions);
     const buttonsRef = useRef(buttons);
     const [ nodes, setNodes ] = useState([
         {
@@ -57,19 +63,18 @@ const Dashboard = () => {
     const questionId = queryParameters.get('questionId');
     const accessToken = queryParameters.get('accessToken');
     const gameId = queryParameters.get('gameId');
-    const zoomRef = useRef(1);
+    const panzoomRef = useRef(null);
 
     const handleZoom = (direction) => {
-        let newZoom = zoomRef.current;
-        if (direction === 'in') {
-            newZoom += 0.1;
-        } else if (direction === 'out' && newZoom > 0.2) {
-            newZoom -= 0.1;
-        }
+        const panzoom = panzoomRef.current;
+        const currentScale = panzoom.getScale();
+        setScaleContainer(currentScale);
 
-        zoomRef.current = newZoom;
-        diagramRef.current.style.transform = `scale(${newZoom})`;
-        diagramRef.current.style.transformOrigin = '0 0';
+        if (direction === 'in') {
+            panzoom.zoom(currentScale + 0.1, { animate: true });
+        } else if (direction === 'out' && currentScale > 0.2) {
+            panzoom.zoom(currentScale - 0.1, { animate: true });
+        }
     };
 
     const instance = jsPlumb.jsPlumb.getInstance({
@@ -248,8 +253,92 @@ const Dashboard = () => {
         };
     }, [ nodes, nodePositions ]);
     useEffect(() => {
+        if (clickMove) {
+            panzoomRef.current = Panzoom(diagramRef.current, {
+                minScale: 0.2,
+                maxScale: 3,
+                step: 0.1,
+                contain: 'inside',
+                disableOnTarget: [ 'node' ],
+                // disablePan: true,
+            });
+            if (scaleContainer < 1) {
+                panzoomRef.current.zoom(scaleContainer, { animate: false });
+            }
+
+            const diagram = diagramRef.current;
+            diagram.addEventListener('panzoomzoom', (e) => {
+                instance.setZoom(e.detail.scale);
+                instance.repaintEverything();
+            });
+
+            return () => {
+                panzoomRef.current.destroy();
+            };
+        }
+    }, [ clickMove ]);
+    // useEffect(() => {
+    //     const diagram = diagramRef.current;
+    //     const handleMouseDown = (e) => {
+    //         // Chỉ bắt đầu kéo nếu không nhấn trên node
+    //         if (!e.target.closest(`.${styles.node}`)) {
+    //             // diagram.classList.add(styles.dragging);
+    //             isDraggingCanvas.current = true;
+    //             initialMousePos.current = { x: e.clientX, y: e.clientY };
+    //         }
+    //     };
+
+    //     const handleMouseMove = (e) => {
+    //         if (isDraggingCanvas.current) {
+    //             const dx = e.clientX - initialMousePos.current.x;
+    //             const dy = e.clientY - initialMousePos.current.y;
+    //             // if (nodePositionsRef.current.length > 0) {
+    //             //     const array = nodePositionsRef.current.map((button, index) => {
+    //             //         return {
+    //             //             ...button,
+    //             //             left: button.left + dx,
+    //             //             top: button.top + dy,
+    //             //         };
+    //             //     });
+    //             //     setNodePositions(array);
+    //             // }
+    //             instance.repaintEverything();
+    //         }
+    //     };
+
+    //     const handleMouseUp = (e) => {
+    //         const dx = e.clientX - initialMousePos.current.x;
+    //         const dy = e.clientY - initialMousePos.current.y;
+    //         if (nodePositionsRef.current.length > 0 && isDraggingCanvas.current) {
+    //             const array = nodePositionsRef.current.map((button, index) => {
+    //                 return {
+    //                     ...button,
+    //                     left: button.left + dx,
+    //                     top: button.top + dy,
+    //                 };
+    //             });
+    //             setNodePositions(array);
+    //             handleConect();
+    //         }
+    //         isDraggingCanvas.current = false;
+    //     };
+
+    //     document.addEventListener('mousedown', handleMouseDown);
+    //     document.addEventListener('mousemove', handleMouseMove);
+    //     document.addEventListener('mouseup', handleMouseUp);
+
+    //     return () => {
+    //         diagram.removeEventListener('mousedown', handleMouseDown);
+    //         document.removeEventListener('mousemove', handleMouseMove);
+    //         document.removeEventListener('mouseup', handleMouseUp);
+    //     };
+    // }, []);
+    useEffect(() => {
         buttonsRef.current = buttons;
     }, [ buttons ]);
+    useEffect(() => {
+        nodePositionsRef.current = nodePositions;
+    }, [ nodePositions ]);
 
     const addNode = async () => {
         const nodeCurrent = nodes[nodes.length - 1];
@@ -276,40 +365,7 @@ const Dashboard = () => {
         setButtons((prevNodes) => [ ...prevNodes, buttonArray ]);
         setNodePositions((prevNodes) => [ ...prevNodes, newNode ]);
 
-        await new Promise((resolve) => setTimeout(resolve, 100)); // Chờ node render xong
-
-        // const instance = instanceRef.current;
-        // const element = document.getElementById(newId);
-
-        // if (element && instance) {
-        //     instance.draggable(newId);
-        //     addEndpoints(newId);
-        // }
-    };
-
-    const addEndpoints = (nodeId) => {
-        const instance = instanceRef.current;
-        const element = document.getElementById('card_0');
-        instance.addEndpoint(nodeId, {
-            endpoint: 'Dot',
-            anchor: 'TopCenter',
-            isSource: true,
-            isTarget: true,
-            maxConnections: -1,
-            paintStyle: { fill: '#4a6298', stroke: '#4a6298' },
-            connectorOverlays: [ [ 'Arrow', { width: 10, length: 10, location: 1 } ] ],
-        });
-
-        bottomPositions.forEach((pos) => {
-            instance.addEndpoint(nodeId, {
-                endpoint: 'Dot',
-                anchor: pos, // Sử dụng tọa độ tùy chỉnh
-                isSource: true,
-                isTarget: true,
-                maxConnections: -1,
-                paintStyle: { fill: '#4a6298' },
-            });
-        });
+        await new Promise((resolve) => setTimeout(resolve, 100));
     };
 
     const handleConect = () => {
@@ -397,7 +453,8 @@ const Dashboard = () => {
         return <></>;
     }, [ nodes, nodePositions ]);
 
-    const handleSubmit = (values) => {
+    const handleSubmit = () => {
+        const values = form.getFieldsValue();
         const data = [];
 
         const offset = getAllNodePositions();
@@ -561,22 +618,55 @@ const Dashboard = () => {
     };
 
     return (
-        <div
-            id="diagram"
-            className={styles.diagram}
-            ref={diagramRef}
-            style={{ width: '100%', border: '2px solid lightgrey', position: 'relative' }}
-        >
-            <Loading show={loading || loadingUpdate} />
-            <Form form={form} onFinish={handleSubmit}>
+        <div className={styles.container}>
+            <div style={{ height: '30px' }}>
                 <Button onClick={addNode}>Add Node</Button>
-                <Button htmlType="submit" disabled={nodes.length <= 1}>
+                <Button onClick={() => handleSubmit()} disabled={nodes.length <= 1}>
                     Save
                 </Button>
-                <Button onClick={() => handleZoom('in')}>Zoom In</Button>
-                <Button onClick={() => handleZoom('out')}>Zoom Out</Button>
-                <DragTable />
-            </Form>
+                <Button
+                    onClick={() => {
+                        const panzoom = panzoomRef.current;
+                        if (scaleContainer > 1 && panzoom) {
+                            panzoom.zoom(1, { animate: true });
+                        }
+                        setClickMove(!clickMove);
+                    }}
+                >
+                    Move
+                </Button>
+                <Button onClick={() => handleZoom('in')} disabled={!clickMove}>
+                    Zoom In
+                </Button>
+                <Button onClick={() => handleZoom('out')} disabled={!clickMove}>
+                    Zoom Out
+                </Button>
+            </div>
+            {scaleContainer >= 1 && !clickMove ? (
+                <div
+                    id="diagram"
+                    className={styles.diagram}
+                    ref={diagramRef}
+                    style={{
+                        width: '100%',
+                        height: 'calc(100vh - 30px)',
+                        overflow: clickMove ? 'hidden' : 'auto',
+                        position: 'relative',
+                    }}
+                >
+                    <Loading show={loading || loadingUpdate} />
+                    <Form form={form}>
+                        <DragTable />
+                    </Form>
+                </div>
+            ) : (
+                <div id="diagram" className={styles.diagram} ref={diagramRef}>
+                    <Loading show={loading || loadingUpdate} />
+                    <Form form={form}>
+                        <DragTable />
+                    </Form>
+                </div>
+            )}
         </div>
     );
 };
