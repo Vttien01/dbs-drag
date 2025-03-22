@@ -32,8 +32,10 @@ const Dashboard = () => {
     const initialMousePos = useRef({ x: 0, y: 0 });
     const [ clickMove, setClickMove ] = useState(false);
     const [ scaleContainer, setScaleContainer ] = useState(1);
+    const [ coordinate, setCoordinate ] = useState({ maxLeft: 0, maxTop: 0 });
     const nodePositionsRef = useRef(nodePositions);
     const buttonsRef = useRef(buttons);
+    const clickMoveRef = useRef(false);
     const [ nodes, setNodes ] = useState([
         {
             id: 'card_0_root',
@@ -260,9 +262,10 @@ const Dashboard = () => {
                 step: 0.1,
                 contain: 'inside',
                 disableOnTarget: [ 'node' ],
+                // disableZoom: false,
                 // disablePan: true,
             });
-            if (scaleContainer < 1) {
+            if (scaleContainer <= 0.7) {
                 panzoomRef.current.zoom(scaleContainer, { animate: false });
             }
 
@@ -338,6 +341,15 @@ const Dashboard = () => {
     }, [ buttons ]);
     useEffect(() => {
         nodePositionsRef.current = nodePositions;
+        const maxValues = nodePositions.reduce(
+            (acc, item) => ({
+                maxLeft: Math.max(acc.maxLeft, item.left),
+                maxTop: Math.max(acc.maxTop, item.top),
+            }),
+            { maxLeft: 0, maxTop: 0 },
+        );
+        const check = maxValues.maxLeft > window.innerWidth - 240 || maxValues.maxTop > window.innerHeight - 318;
+        setCoordinate(maxValues);
     }, [ nodePositions ]);
 
     const addNode = async () => {
@@ -444,9 +456,21 @@ const Dashboard = () => {
                 const left = nodePositions[index]?.left;
                 const top = nodePositions[index]?.top;
                 return (
-                    <div key={id} id={id} className={styles.node} style={{ left, top }}>
-                        <ChildrenItem index={index} key={id} id={id} left={left} top={top} />
-                    </div>
+                    <>
+                        <div
+                            className={styles.coverDiv}
+                            style={{
+                                left: 0,
+                                top: 0,
+                                width: coordinate.maxLeft + 240,
+                                height: coordinate.maxTop + 318,
+                                display: !clickMoveRef.current && 'none',
+                            }}
+                        ></div>
+                        <div key={id} id={id} className={styles.node} style={{ left, top }}>
+                            <ChildrenItem index={index} key={id} id={id} left={left} top={top} />
+                        </div>
+                    </>
                 );
             });
         }
@@ -616,7 +640,6 @@ const Dashboard = () => {
 
         form.setFields(filteredValues);
     };
-
     return (
         <div className={styles.container}>
             <div style={{ height: '30px' }}>
@@ -627,9 +650,10 @@ const Dashboard = () => {
                 <Button
                     onClick={() => {
                         const panzoom = panzoomRef.current;
-                        if (scaleContainer > 1 && panzoom) {
+                        if (scaleContainer >= 0.7 && panzoom) {
                             panzoom.zoom(1, { animate: true });
                         }
+                        clickMoveRef.current = !clickMove;
                         setClickMove(!clickMove);
                     }}
                 >
@@ -642,7 +666,7 @@ const Dashboard = () => {
                     Zoom Out
                 </Button>
             </div>
-            {scaleContainer >= 1 && !clickMove ? (
+            {scaleContainer > 0.7 && !clickMoveRef.current ? (
                 <div
                     id="diagram"
                     className={styles.diagram}
@@ -650,7 +674,7 @@ const Dashboard = () => {
                     style={{
                         width: '100%',
                         height: 'calc(100vh - 30px)',
-                        overflow: clickMove ? 'hidden' : 'auto',
+                        overflow: 'auto',
                         position: 'relative',
                     }}
                 >
@@ -660,7 +684,15 @@ const Dashboard = () => {
                     </Form>
                 </div>
             ) : (
-                <div id="diagram" className={styles.diagram} ref={diagramRef}>
+                <div
+                    id="diagram"
+                    className={styles.diagram}
+                    ref={diagramRef}
+                    style={{
+                        width: '100%',
+                        position: 'relative',
+                    }}
+                >
                     <Loading show={loading || loadingUpdate} />
                     <Form form={form}>
                         <DragTable />
