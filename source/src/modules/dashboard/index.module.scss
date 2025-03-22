@@ -12,6 +12,12 @@
     position: relative;
     width: max-content;
 }
+.diagram1 {
+    width: max-content;
+    height: max-content;
+    position: relative;
+    width: max-content;
+}
 .node {
     width: 240px;
     height: max-content;
@@ -21,6 +27,13 @@
     position: absolute;
     text-align: center;
     padding: 0px 8px 16px;  
+}
+.coverDiv {
+    background: transparent;
+    position: absolute;
+    text-align: center;
+    padding: 0px 8px 16px;  
+    z-index: 999;
 }
 .flex {
     width: 100%;
