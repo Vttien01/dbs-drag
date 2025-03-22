@@ -258,7 +258,7 @@ const Dashboard = () => {
         if (clickMove) {
             panzoomRef.current = Panzoom(diagramRef.current, {
                 minScale: 0.2,
-                maxScale: 3,
+                maxScale: 10,
                 step: 0.1,
                 contain: 'inside',
                 disableOnTarget: [ 'node' ],
@@ -349,6 +349,20 @@ const Dashboard = () => {
             { maxLeft: 0, maxTop: 0 },
         );
         const check = maxValues.maxLeft > window.innerWidth - 240 || maxValues.maxTop > window.innerHeight - 318;
+        const panzoom = panzoomRef.current;
+        if (check && panzoom && (scaleContainer > 0.6 || maxValues.maxLeft > 2500)) {
+            const number = Math.round((maxValues.maxLeft + 240 - window.innerWidth) / 240);
+            if (number == 2) {
+                setScaleContainer(scaleContainer - 0.4);
+                panzoom.zoom(scaleContainer - 0.4, { animate: true });
+            } else if (number > 2) {
+                setScaleContainer(scaleContainer - 0.1);
+                panzoom.zoom(scaleContainer - 0.1, { animate: true });
+            } else {
+                setScaleContainer(scaleContainer - 0.2);
+                panzoom.zoom(scaleContainer - 0.2, { animate: true });
+            }
+        }
         setCoordinate(maxValues);
     }, [ nodePositions ]);
 
@@ -357,7 +371,7 @@ const Dashboard = () => {
         const match = nodeCurrent?.id.match(/(card_)(\d+)/);
         const [ , field, index ] = match;
         const newId = `card_${Number(index) + 1}`;
-        const innerWidth = Math.random() * (window.innerWidth - 200);
+        const innerWidth = window.innerWidth;
         const innerHeight = Math.random() * 300;
         const maxValues = nodePositions.reduce(
             (acc, item) => ({
@@ -369,7 +383,7 @@ const Dashboard = () => {
         setAddNew(false);
         const newNode = {
             id: newId,
-            left: Math.round(maxValues.maxLeft + 220),
+            left: Math.round(maxValues.maxLeft + 240),
             top: maxValues.maxLeft > innerWidth ? Math.round(innerHeight) : 50,
             buttons: buttonArray,
         };
@@ -385,8 +399,6 @@ const Dashboard = () => {
             const connections = instance.getAllConnections();
             if (connections.length > 0) {
                 instance.deleteEveryConnection();
-            } else {
-                // console.log('No connections to clear');
             }
         }
     };
@@ -553,24 +565,6 @@ const Dashboard = () => {
             },
         });
     };
-
-    const { execute: executeUpFile } = useFetch(apiConfig.file.image, {
-        immediate: false,
-    });
-    const uploadFile = ({ file }, index) => {
-        executeUpFile({
-            data: {
-                image: file,
-            },
-            accessToken: accessToken,
-            onCompleted: ({ data }) => {
-                form.setFieldValue(`img_url${index}`, data.url);
-            },
-            onError: () => {
-                // onError();
-            },
-        });
-    };
     const ChildrenItem = ({ index, id }) => {
         return (
             <Flex gap={6} vertical style={{ paddingTop: index == 0 ? '12px' : 0 }}>
@@ -622,6 +616,7 @@ const Dashboard = () => {
                         />
                     </Flex>
                 )}
+                <TextField name={`id${index}`} style={{ width: '100%' }} placeholder={'Name'} />
                 <TextField name={`name${index}`} style={{ width: '100%' }} placeholder={'Name'} />
                 <TextField
                     name={`body_text${index}`}
@@ -689,6 +684,8 @@ const Dashboard = () => {
                         height: 'calc(100vh - 30px)',
                         overflow: 'auto',
                         position: 'relative',
+                        left: 0,
+                        top: 0,
                     }}
                 >
                     <Loading show={loading || loadingUpdate} />
@@ -704,8 +701,6 @@ const Dashboard = () => {
                     style={{
                         width: '100%',
                         position: 'relative',
-                        left: 0,
-                        top: 0,
                     }}
                 >
                     <Loading show={loading || loadingUpdate} />
