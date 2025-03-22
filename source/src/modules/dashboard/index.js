@@ -379,6 +379,17 @@ const Dashboard = () => {
 
         await new Promise((resolve) => setTimeout(resolve, 100));
     };
+    const clearConnections = () => {
+        const instance = instanceRef.current;
+        if (instance) {
+            const connections = instance.getAllConnections();
+            if (connections.length > 0) {
+                instance.deleteEveryConnection();
+            } else {
+                // console.log('No connections to clear');
+            }
+        }
+    };
 
     const handleConect = () => {
         const instance = instanceRef.current;
@@ -533,7 +544,9 @@ const Dashboard = () => {
             accessToken: accessToken,
             onCompleted: (res) => {
                 showSucsessMessage('Update success');
-                handleGetList();
+                // clearConnections();
+                // handleConect();
+                // handleGetList();
             },
             onError: (res) => {
                 showErrorMessage('Update failed');
@@ -691,6 +704,8 @@ const Dashboard = () => {
                     style={{
                         width: '100%',
                         position: 'relative',
+                        left: 0,
+                        top: 0,
                     }}
                 >
                     <Loading show={loading || loadingUpdate} />
