@@ -1,0 +1,21 @@
+.sidebar {
+    width: 200px;
+    padding: 20px;
+    background-color: #f0f0f0;
+    border-left: 1px solid #ddd;
+  }
+  
+  .dndnode {
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    // cursor: move;
+    cursor: pointer;
+    text-align: center;
+  }
+  
+  .dndnode:hover {
+    background-color: #e0e0e0;
+  }
