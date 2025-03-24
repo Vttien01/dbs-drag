@@ -20,9 +20,14 @@ const CustomNode = ({ data }) => {
         }
         data.onDelete();
     };
+    console.log(data);
 
     return (
-        <div className={styles.customNode} style={{ background: data.id == 'card_0_root' ? 'blue' : '#6c6c6c' }}>
+        <div
+            className={styles.customNode}
+            style={{ background: data.id == 'card_0_root' ? 'blue' : '#6c6c6c' }}
+            data-error-node={data.isError}
+        >
             {/* Handle trên cùng (1 nút) */}
             <Handle
                 type="target"
@@ -37,13 +42,6 @@ const CustomNode = ({ data }) => {
             />
 
             <Flex gap={6} vertical>
-                {/* <Button
-                    type="text"
-                    // shape="circle"
-                    icon={<DeleteOutlined />}
-                    // onClick={handleDeleteClick}
-                    style={{ position: 'absolute', top: '5px', right: '5px', color: '#ff4d4f' }}
-                /> */}
                 <Tooltip title="Delete">
                     <CloseSquareFilled
                         style={{
