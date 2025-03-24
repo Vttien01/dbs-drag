@@ -3,6 +3,8 @@
 .app-content {
     height: 100vh;
     overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
 
     .wrapper {
         min-height: calc(100vh - 128px);
