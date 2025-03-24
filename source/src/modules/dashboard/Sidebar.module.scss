@@ -1,12 +1,12 @@
 .sidebar {
-    width: 200px;
+    width: 100vw;
     padding: 20px;
     background-color: #f0f0f0;
     border-left: 1px solid #ddd;
   }
   
   .dndnode {
-    padding: 10px;
+    padding: 10px 16px;
     margin-bottom: 10px;
     background-color: #fff;
     border: 1px solid #ccc;
@@ -14,8 +14,27 @@
     // cursor: move;
     cursor: pointer;
     text-align: center;
+    width: max-content;
   }
   
   .dndnode:hover {
     background-color: #e0e0e0;
+  }
+
+  .save {
+    padding: 10px 16px;
+    margin-bottom: 10px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    // cursor: move;
+    cursor: pointer !important;
+    text-align: center;
+    width: max-content;
+    background-color: rgb(19, 211, 19);
+    color: white;
+  }
+  
+  .save:hover {
+    // background-color: #e0e0e0;
   }

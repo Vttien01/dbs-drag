@@ -3,11 +3,13 @@
     height: 100vh;
   }
   
-  .reactflow-wrapper {
+  .reactflow-wrapper  {
     flex-grow: 1;
     height: 100%;
-    width: calc(100vw - 200px);
+    width: 100vw;
   }
+
+  
 
   .controls {
     position: fixed;
