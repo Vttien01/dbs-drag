@@ -94,6 +94,7 @@ const FlowEditor = () => {
             });
             const initialValues = {};
             initialNodes.forEach((node) => {
+                initialValues[`id-${node.id}`] = node.id;
                 initialValues[`name-${node.id}`] = node.data.name;
                 initialValues[`body_text-${node.id}`] = node.data.body_text;
                 initialValues[`img_url-${node.id}`] = node.data.img_url;
@@ -297,12 +298,17 @@ const FlowEditor = () => {
                         return itemButton;
                     });
                 }
+                if (item.id == edgeToDelete.source) {
+                    return {
+                        ...item,
+                        data: {
+                            ...item.data,
+                            buttons: buttonArray,
+                        },
+                    };
+                }
                 return {
                     ...item,
-                    data: {
-                        ...item.data,
-                        buttons: buttonArray,
-                    },
                 };
             });
             setNodes(dataSend);
@@ -352,7 +358,6 @@ const FlowEditor = () => {
                     edges={edges}
                     handleGetList={handleGetList}
                     setNodes={setNodes}
-
                 />
                 <Form form={form} onValuesChange={onValuesChange}>
                     <div className={styles.reactflowWrapper}>
