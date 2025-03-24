@@ -5,7 +5,7 @@ import apiConfig from '@constants/apiConfig';
 import { showErrorMessage, showSucsessMessage } from '@services/notifyService';
 // import { dataExp } from './dataExp';
 
-const Sidebar = ({ addNode, form, nodes, dataExp }) => {
+const Sidebar = ({ addNode, form, nodes, dataExp, handleGetList }) => {
     const onDragStart = (event, nodeType) => {
         event.dataTransfer.setData('application/reactflow', nodeType);
         event.dataTransfer.effectAllowed = 'move';
@@ -25,10 +25,11 @@ const Sidebar = ({ addNode, form, nodes, dataExp }) => {
                 buttonArray = buttons.map((itemButton) => {
                     if (itemButton != null) {
                         const child = nodes?.find(({ id }) => id === itemButton.nodeId);
-                        return {
-                            name: values[`name-${child.id}`] || child?.data?.name || '',
-                            nodeId: itemButton.nodeId,
-                        };
+                        if (child)
+                            return {
+                                name: values[`name-${child.id}`] || child?.data?.name || '',
+                                nodeId: itemButton.nodeId,
+                            };
                     }
                     return null;
                 });
@@ -55,7 +56,7 @@ const Sidebar = ({ addNode, form, nodes, dataExp }) => {
             accessToken: accessToken,
             onCompleted: (res) => {
                 showSucsessMessage('Update success');
-                // handleGetList();
+                handleGetList();
             },
             onError: (res) => {
                 showErrorMessage('Update failed');

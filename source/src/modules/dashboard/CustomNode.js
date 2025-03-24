@@ -1,16 +1,28 @@
-import React from 'react';
-import { Handle } from '@xyflow/react';
-import styles from './CustomNode.module.scss';
-import { Flex, Form } from 'antd';
 import TextField from '@components/common/form/TextField';
 import UploadImageField from '@components/common/form/entry/UploadImageField';
+import { Handle } from '@xyflow/react';
+import { Button, Flex, Tooltip } from 'antd';
+import React from 'react';
+import styles from './CustomNode.module.scss';
+import { CloseSquareFilled, DeleteOutlined } from '@ant-design/icons';
+import { showErrorMessage, showWarningMessage } from '@services/notifyService';
 
 const CustomNode = ({ data }) => {
     const queryParameters = new URLSearchParams(window.location.search);
     const questionId = queryParameters.get('questionId');
     const accessToken = queryParameters.get('accessToken');
+
+    const handleDeleteClick = (e) => {
+        e.preventDefault();
+        if (data.id == 'card_0_root') {
+            showWarningMessage('Cannot delete root node');
+            return;
+        }
+        data.onDelete();
+    };
+
     return (
-        <div className={styles.customNode}>
+        <div className={styles.customNode} style={{ background: data.id == 'card_0_root' ? 'blue' : '#6c6c6c' }}>
             {/* Handle trên cùng (1 nút) */}
             <Handle
                 type="target"
@@ -25,6 +37,25 @@ const CustomNode = ({ data }) => {
             />
 
             <Flex gap={6} vertical>
+                {/* <Button
+                    type="text"
+                    // shape="circle"
+                    icon={<DeleteOutlined />}
+                    // onClick={handleDeleteClick}
+                    style={{ position: 'absolute', top: '5px', right: '5px', color: '#ff4d4f' }}
+                /> */}
+                <Tooltip title="Delete">
+                    <CloseSquareFilled
+                        style={{
+                            color: 'red',
+                            fontSize: 24,
+                            position: 'absolute',
+                            top: '-2px',
+                            right: '-2px',
+                        }}
+                        onClick={handleDeleteClick}
+                    />
+                </Tooltip>
                 <TextField name={`name-${data.id}`} style={{ width: '100%' }} placeholder={'Name'} />
                 <TextField
                     name={`body_text-${data.id}`}
