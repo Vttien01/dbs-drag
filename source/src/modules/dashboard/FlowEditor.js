@@ -35,6 +35,8 @@ const FlowEditor = () => {
     const [ hoveredEdgeId, setHoveredEdgeId ] = useState(null); // Theo dõi edge đang hover
     const [ isModalVisible, setIsModalVisible ] = useState(false); // Điều khiển popup
     const [ edgeToDelete, setEdgeToDelete ] = useState(null); // Lưu edge cần xóa
+    const [ nodeToDelete, setNodeToDelete ] = useState(null); // Lưu edge cần xóa
+    const [ isModalDeleteNote, setIsModalDeleteNote ] = useState(false);
     const {
         execute: executeGetById,
         data: dataExp,
@@ -81,6 +83,10 @@ const FlowEditor = () => {
                                     node.id === item.id ? { ...node, data: { ...node.data, ...updatedData } } : node,
                                 ),
                             );
+                        },
+                        onDelete: () => {
+                            setIsModalDeleteNote(true);
+                            setNodeToDelete(item.id);
                         },
                     },
                 };
@@ -231,6 +237,10 @@ const FlowEditor = () => {
                         ),
                     );
                 },
+                onDelete: () => {
+                    setIsModalDeleteNote(true);
+                    setNodeToDelete(`card_${newNodeId}`);
+                },
             },
         };
         form.setFieldsValue({
@@ -310,11 +320,32 @@ const FlowEditor = () => {
         },
     }));
 
+    const handleDeleteNode = () => {
+        setNodes((nds) => nds.filter((node) => node.id !== nodeToDelete));
+        setEdges((eds) => eds.filter((edge) => edge.source !== nodeToDelete && edge.target !== nodeToDelete));
+        const fieldsToRemove = [
+            `name_${nodeToDelete}`,
+            `body_text_${nodeToDelete}`,
+            `img_url_${nodeToDelete}`,
+            `img_name_${nodeToDelete}`,
+        ];
+        form.setFields(fieldsToRemove.map((field) => ({ name: field, value: '' })));
+        setNodeToDelete(null);
+        setIsModalDeleteNote(false);
+    };
+
     return (
         <div className={styles.app}>
             <Loading show={loading} />
             <ReactFlowProvider>
-                <Sidebar addNode={addNode} form={form} nodes={nodes} dataExp={dataExp} edges={edges} />
+                <Sidebar
+                    addNode={addNode}
+                    form={form}
+                    nodes={nodes}
+                    dataExp={dataExp}
+                    edges={edges}
+                    handleGetList={handleGetList}
+                />
                 <Form form={form} onValuesChange={onValuesChange}>
                     <div className={styles.reactflowWrapper}>
                         <ReactFlow
@@ -344,6 +375,18 @@ const FlowEditor = () => {
                 cancelText={<FormattedMessage defaultMessage={'Cancel'} />}
             >
                 <p>Are you sure you want to delete this connection?</p>
+            </Modal>
+            <Modal
+                title={<FormattedMessage defaultMessage={'Confirm delete node'} />}
+                open={isModalDeleteNote}
+                onOk={handleDeleteNode}
+                onCancel={() => {
+                    setIsModalDeleteNote(false);
+                }}
+                okText="Delete"
+                cancelText="Cancel"
+            >
+                <p>Are you sure you want to delete this node?</p>
             </Modal>
         </div>
     );
