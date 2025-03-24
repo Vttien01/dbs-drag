@@ -352,6 +352,7 @@ const FlowEditor = () => {
                     edges={edges}
                     handleGetList={handleGetList}
                     setNodes={setNodes}
+
                 />
                 <Form form={form} onValuesChange={onValuesChange}>
                     <div className={styles.reactflowWrapper}>

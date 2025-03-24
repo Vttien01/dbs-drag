@@ -20,7 +20,6 @@ const CustomNode = ({ data }) => {
         }
         data.onDelete();
     };
-    console.log(data);
 
     return (
         <div
