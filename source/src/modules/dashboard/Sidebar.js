@@ -2,10 +2,11 @@ import React from 'react';
 import styles from './Sidebar.module.scss';
 import useFetch from '@hooks/useFetch';
 import apiConfig from '@constants/apiConfig';
-import { showErrorMessage, showSucsessMessage } from '@services/notifyService';
+import { showErrorMessage, showSucsessMessage, showWarningMessage } from '@services/notifyService';
+import { isError, set } from 'lodash';
 // import { dataExp } from './dataExp';
 
-const Sidebar = ({ addNode, form, nodes, dataExp, handleGetList }) => {
+const Sidebar = ({ addNode, form, nodes, dataExp, handleGetList, edges, setNodes }) => {
     const onDragStart = (event, nodeType) => {
         event.dataTransfer.setData('application/reactflow', nodeType);
         event.dataTransfer.effectAllowed = 'move';
@@ -16,8 +17,36 @@ const Sidebar = ({ addNode, form, nodes, dataExp, handleGetList }) => {
     const { execute: executeUpdate, loading: loadingUpdate } = useFetch(apiConfig.game.question.update, {
         immediate: false,
     });
+    const handleCheckDot = () => {
+        return nodes;
+    };
     const handleSubmit = () => {
         const values = form.getFieldsValue();
+        const check = edges.map((item) => item.target);
+        const uniqueSources = [ ...new Set(check) ];
+        if (uniqueSources.length < nodes.length) {
+            const number = nodes.length - uniqueSources.length;
+            showWarningMessage(`There are currently ${number} root nodes`);
+            const arrayRoot = nodes.map((item) => {
+                if (!uniqueSources.includes(item.id))
+                    return {
+                        ...item,
+                        data: {
+                            ...item.data,
+                            isError: true,
+                        },
+                    };
+                return {
+                    ...item,
+                    data: {
+                        ...item.data,
+                        isError: false,
+                    },
+                };
+            });
+            setNodes(arrayRoot);
+            return;
+        }
         const dataSend = nodes.map((item, index) => {
             const buttons = item.data.buttons;
             let buttonArray = [ null, null, null, null ];

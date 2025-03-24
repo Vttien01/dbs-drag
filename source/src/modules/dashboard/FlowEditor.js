@@ -77,6 +77,7 @@ const FlowEditor = () => {
                         img_url: item.img_url,
                         img_name: item.img_name,
                         buttons: item.buttons,
+                        isError: false,
                         onUpdate: (updatedData) => {
                             setNodes((nds) =>
                                 nds.map((node) =>
@@ -126,16 +127,20 @@ const FlowEditor = () => {
         (params) => {
             const { source, target, sourceHandle } = params;
             const values = form.getFieldsValue();
-            setEdges((eds) =>
-                addEdge(
-                    {
-                        ...params,
-                        // type: 'straight',4
-                        style: { stroke: '#1890ff', strokeWidth: 3 }, // Màu xanh, độ dày 3px
-                    },
-                    eds,
-                ),
-            );
+            setEdges((eds) => {
+                // Tìm edge hiện tại từ sourceHandle
+                const existingEdge = eds.find(
+                    (edge) => edge.source === params.source && edge.sourceHandle === params.sourceHandle,
+                );
+
+                // Nếu đã có edge, xóa nó trước
+                let updatedEdges = eds;
+                if (existingEdge) {
+                    updatedEdges = eds.filter((edge) => edge.id !== existingEdge.id);
+                }
+
+                return addEdge({ ...params, style: { stroke: '#1890ff', strokeWidth: 3 } }, updatedEdges);
+            });
             setNodes((nds) =>
                 nds.map((node) => {
                     if (node.id === source) {
@@ -230,6 +235,7 @@ const FlowEditor = () => {
                 img_url: '',
                 img_name: '',
                 buttons: [ null, null, null, null ],
+                isError: false,
                 onUpdate: (updatedData) => {
                     setNodes((nds) =>
                         nds.map((node) =>
@@ -345,6 +351,8 @@ const FlowEditor = () => {
                     dataExp={dataExp}
                     edges={edges}
                     handleGetList={handleGetList}
+                    setNodes={setNodes}
+
                 />
                 <Form form={form} onValuesChange={onValuesChange}>
                     <div className={styles.reactflowWrapper}>
