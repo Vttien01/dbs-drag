@@ -4,6 +4,7 @@ import useFetch from '@hooks/useFetch';
 import apiConfig from '@constants/apiConfig';
 import { showErrorMessage, showSucsessMessage, showWarningMessage } from '@services/notifyService';
 import { isError, set } from 'lodash';
+import { Flex } from 'antd';
 // import { dataExp } from './dataExp';
 
 const Sidebar = ({ addNode, form, nodes, dataExp, handleGetList, edges, setNodes }) => {
@@ -94,14 +95,17 @@ const Sidebar = ({ addNode, form, nodes, dataExp, handleGetList, edges, setNodes
     };
 
     return (
-        <aside className={styles.sidebar}>
+        <Flex
+            style={{ height: '55px', alignItems: 'end', position: 'absolute', right: 0, top: 0, zIndex: 1000 }}
+            gap={4}
+        >
             <div className={styles.dndnode} onClick={addNode}>
                 Add Node
             </div>
-            <div className={styles.dndnode} onClick={handleSubmit}>
+            <div className={styles.save} onClick={handleSubmit}>
                 Save
             </div>
-        </aside>
+        </Flex>
     );
 };
 
