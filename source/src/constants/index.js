@@ -1,4 +1,4 @@
-export const apiUrl = process.env.REACT_APP_API;
+export const apiUrl = window.API_HOST;
 export const gameUrl = process.env.REACT_APP_GAME_API;
 export const siteUrl = process.env.REACT_APP_SITE_URL;
 export const showMenu = process.env.PLUGIN_ADVANCED_TRAINING_ENABLED;
@@ -23,9 +23,9 @@ export const storageKeys = {
 };
 
 export const AppConstants = {
-    apiRootUrl: process.env.REACT_APP_API,
+    apiRootUrl: window.API_HOST,
     gameRootUrl: process.env.REACT_APP_GAME_API,
-    contentRootUrl: `${process.env.REACT_APP_API}v1/file/download`,
+    contentRootUrl: `${window.API_HOST}v1/file/download`,
     langKey: 'vi',
     encryptKey: process.env.REACT_APP_ENC_KEY,
 };
