@@ -24,7 +24,7 @@ const Sidebar = ({ addNode, form, nodes, dataExp, handleGetList, edges, setNodes
         const values = form.getFieldsValue();
         const check = edges.map((item) => item.target);
         const uniqueSources = [ ...new Set(check) ];
-        if (uniqueSources.length < nodes.length) {
+        if (uniqueSources.length < nodes.length - 1) {
             const number = nodes.length - uniqueSources.length;
             showWarningMessage(`There are currently ${number} root nodes`);
             const arrayRoot = nodes.map((item) => {
