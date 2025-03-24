@@ -1,23 +1,22 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import Loading from '@components/common/loading';
+import apiConfig from '@constants/apiConfig';
+import useFetch from '@hooks/useFetch';
 import {
-    ReactFlowProvider,
-    useNodesState,
-    useEdgesState,
     addEdge,
     Background,
     Controls,
     ReactFlow,
+    ReactFlowProvider,
+    useEdgesState,
+    useNodesState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { Form, Modal } from 'antd';
+import React, { useCallback, useEffect, useState } from 'react';
+import { FormattedMessage } from 'react-intl';
+import CustomNode from './CustomNode';
 import styles from './FlowEditor.module.scss';
 import Sidebar from './Sidebar';
-import CustomNode from './CustomNode';
-// import { dataExp } from './dataExp';
-import { Form, Modal } from 'antd';
-import useFetch from '@hooks/useFetch';
-import apiConfig from '@constants/apiConfig';
-import Loading from '@components/common/loading';
-import { FormattedMessage } from 'react-intl';
 
 const nodeTypes = {
     custom: CustomNode,
@@ -109,7 +108,7 @@ const FlowEditor = () => {
                             if (!btn) return null;
 
                             return {
-                                id: `${item.id}-${btn.nodeId}`,
+                                id: `${item.id}-${Math.random() * 500}`,
                                 source: item.id,
                                 target: btn.nodeId,
                                 sourceHandle: `bottom${index}`, // Đảm bảo khớp với bottom1, bottom2, bottom3, bottom4
@@ -134,7 +133,6 @@ const FlowEditor = () => {
                     (edge) => edge.source === params.source && edge.sourceHandle === params.sourceHandle,
                 );
 
-                // Nếu đã có edge, xóa nó trước
                 let updatedEdges = eds;
                 if (existingEdge) {
                     updatedEdges = eds.filter((edge) => edge.id !== existingEdge.id);
@@ -323,7 +321,6 @@ const FlowEditor = () => {
         setEdgeToDelete(null);
     };
 
-    // Cập nhật style động cho edges
     const updatedEdges = edges.map((edge) => ({
         ...edge,
         style: {
