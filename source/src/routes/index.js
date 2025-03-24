@@ -18,20 +18,20 @@ const routes = {
     },
     homePage: {
         path: '/dashboard',
-        component: Dashboard,
+        component: FlowEditor,
         auth: true,
         title: 'Home',
     },
     flowEditor: {
-        path: 'flow-editor',
-        component: FlowEditor,
+        path: '/flow-editor',
+        component: Dashboard,
         auth: true,
         title: 'Home',
     },
     // keep this at last
     notFound: {
         // component: PageNotFound,
-        component: Dashboard,
+        component: FlowEditor,
         auth: null,
         title: 'Page not found',
         path: '*',
