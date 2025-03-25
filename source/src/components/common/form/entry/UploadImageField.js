@@ -24,7 +24,7 @@ function UploadImageField({
     objectName = '',
     description = '',
     uploadApi = apiConfig.file.image,
-    size = 1,
+    size = 5,
     accessToken,
 }) {
     const checkFileLink = (_, value) => {
@@ -143,12 +143,10 @@ function ImageField({
         }
         return (
             <div style={{ display: 'flex', alignItems: 'center', flexDirection: 'column' }}>
-                {/* <div>
-                    <UploadOutlined style={{ fontSize: 16 }} />
-                </div> */}
-                <div style={{ fontSize: 12, color: 'white' }}>
-                    {/* Upload {objectName} */}
-                    Click to add image Supported jpg and png only 5mb max Recommended 200x190
+                <div style={{ fontSize: 12, color: 'gray' }}>
+                    Click to add image <br />
+                    Supported jpg and png only <br /> 5mb max <br />
+                    Recommended 720x350
                 </div>
             </div>
         );
@@ -159,11 +157,21 @@ function ImageField({
             {' '}
             <ImgCrop cropShape={cropShape} aspect={aspect} beforeCrop={(file) => beforeUpload(file, size)}>
                 <Upload accept=".jpg, .jpeg, .png" showUploadList={false} customRequest={uploadFile}>
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
+                    <div
+                        style={{
+                            display: 'flex',
+                            gap: 10,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: 'white',
+                            borderRadius: 10,
+                        }}
+                    >
                         <div
                             className={classNames(
                                 styles.uploadBtn,
-                                errorMessage || value ? styles.border : styles.borderHover,
+                                styles.border,
+                                // errorMessage || value ? styles.border : styles.borderHover,
                             )}
                             style={{ padding: 6 }}
                         >

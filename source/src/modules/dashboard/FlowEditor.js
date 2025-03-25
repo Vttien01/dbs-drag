@@ -356,7 +356,7 @@ const FlowEditor = () => {
                     handleGetList={handleGetList}
                     setNodes={setNodes}
                 />
-                <Form form={form} onValuesChange={onValuesChange} style={{ marginTop: 18 }}>
+                <Form form={form} onValuesChange={onValuesChange} style={{ marginTop: 24 }}>
                     <div className={styles.reactflowWrapper}>
                         <ReactFlow
                             nodes={nodes}
