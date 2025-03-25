@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from './Sidebar.module.scss';
+import styles from './Header.module.scss';
 import useFetch from '@hooks/useFetch';
 import apiConfig from '@constants/apiConfig';
 import { showErrorMessage, showSucsessMessage, showWarningMessage } from '@services/notifyService';
@@ -7,7 +7,7 @@ import { isError, set } from 'lodash';
 import { Flex } from 'antd';
 // import { dataExp } from './dataExp';
 
-const Sidebar = ({ addNode, form, nodes, dataExp, handleGetList, edges, setNodes }) => {
+const Header = ({ addNode, form, nodes, dataExp, handleGetList, edges, setNodes }) => {
     const onDragStart = (event, nodeType) => {
         event.dataTransfer.setData('application/reactflow', nodeType);
         event.dataTransfer.effectAllowed = 'move';
@@ -95,10 +95,7 @@ const Sidebar = ({ addNode, form, nodes, dataExp, handleGetList, edges, setNodes
     };
 
     return (
-        <Flex
-            style={{ height: '55px', alignItems: 'end', position: 'absolute', right: 0, top: 0, zIndex: 1000 }}
-            gap={4}
-        >
+        <Flex className={styles.sidebar} gap={10}>
             <div className={styles.dndnode} onClick={addNode}>
                 Add Node
             </div>
@@ -109,4 +106,4 @@ const Sidebar = ({ addNode, form, nodes, dataExp, handleGetList, edges, setNodes
     );
 };
 
-export default Sidebar;
+export default Header;
