@@ -27,7 +27,6 @@ const CustomNode = ({ data }) => {
             style={{ background: data.id == 'card_0_root' ? 'blue' : '#6c6c6c' }}
             data-error-node={data.isError}
         >
-            {/* Handle trên cùng (1 nút) */}
             <Handle
                 type="target"
                 position="top"
@@ -63,14 +62,10 @@ const CustomNode = ({ data }) => {
                 <UploadImageField
                     name={`img_url-${data.id}`}
                     objectName="image"
-                    aspect={16 / 9}
+                    aspect={19 / 9}
                     accessToken={accessToken}
                 />
-                <TextField name={`img_name-${data.id}`} style={{ width: '100%' }} placeholder={'Image Name'} />
-                {/* </Form> */}
             </Flex>
-
-            {/* 4 handle dưới cùng */}
             <Handle
                 type="source"
                 position="bottom"
