@@ -16,7 +16,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { FormattedMessage } from 'react-intl';
 import CustomNode from './CustomNode';
 import styles from './FlowEditor.module.scss';
-import Sidebar from './Sidebar';
+import Header from './Header';
 
 const nodeTypes = {
     custom: CustomNode,
@@ -347,7 +347,7 @@ const FlowEditor = () => {
         <div className={styles.app}>
             <Loading show={loading} />
             <ReactFlowProvider>
-                <Sidebar
+                <Header
                     addNode={addNode}
                     form={form}
                     nodes={nodes}
@@ -356,7 +356,7 @@ const FlowEditor = () => {
                     handleGetList={handleGetList}
                     setNodes={setNodes}
                 />
-                <Form form={form} onValuesChange={onValuesChange}>
+                <Form form={form} onValuesChange={onValuesChange} style={{ marginTop: 18 }}>
                     <div className={styles.reactflowWrapper}>
                         <ReactFlow
                             nodes={nodes}

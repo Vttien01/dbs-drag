@@ -1,13 +1,19 @@
 .sidebar {
-    width: 100vw;
-    padding: 20px;
-    background-color: #f0f0f0;
-    border-left: 1px solid #ddd;
-  }
+  height: max-content;
+  align-items: center; // Căn giữa theo chiều dọc
+  justify-content: flex-end; // Đẩy nút sang phải
+  position: fixed; // Giữ header cố định ở đầu trang
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #eef0f3; // Thêm nền để rõ ràng
+  padding: 0 10px;
+}
   
   .dndnode {
-    padding: 10px 16px;
-    margin-bottom: 10px;
+    padding: 8px;
+    margin: 6px 0px;
     background-color: #fff;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -18,12 +24,12 @@
   }
   
   .dndnode:hover {
-    background-color: #e0e0e0;
+    background-color: #feedd1;
   }
 
   .save {
-    padding: 10px 16px;
-    margin-bottom: 10px;
+    padding: 8px;
+    margin: 6px 0px;
     background-color: #fff;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -31,7 +37,7 @@
     cursor: pointer !important;
     text-align: center;
     width: max-content;
-    background-color: rgb(19, 211, 19);
+    background-color: #f69600;
     color: white;
   }
   
