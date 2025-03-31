@@ -1,56 +1,44 @@
-import { Button, Flex, Form, Upload } from 'antd';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-
-import { CloseSquareFilled } from '@ant-design/icons';
-import TextField from '@components/common/form/TextField';
 import Loading from '@components/common/loading';
 import apiConfig from '@constants/apiConfig';
 import useFetch from '@hooks/useFetch';
-import useTranslate from '@hooks/useTranslate';
-import { showErrorMessage, showSucsessMessage } from '@services/notifyService';
-import jsPlumb from 'jsplumb';
+import {
+    addEdge,
+    Background,
+    Controls,
+    ReactFlow,
+    ReactFlowProvider,
+    useEdgesState,
+    useNodesState,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import { Form, Modal } from 'antd';
+import React, { useCallback, useEffect, useState } from 'react';
+import { FormattedMessage } from 'react-intl';
+import CustomNode from './CustomNode';
 import styles from './index.module.scss';
-import UploadImageField from '@components/common/form/entry/UploadImageField';
-import { dataExp } from './dataExp';
-import Panzoom from '@panzoom/panzoom';
+import Header from './Header';
 
-const Dashboard = () => {
-    const diagramRef = useRef(null);
-    const instanceRef = useRef(null);
+const nodeTypes = {
+    custom: CustomNode,
+};
+
+const directionDot = [ 'bottom0', 'bottom1', 'bottom2', 'bottom3' ];
+
+const FlowEditor = () => {
+    const [ nodes, setNodes, onNodesChange ] = useNodesState([]);
+    const [ edges, setEdges, onEdgesChange ] = useEdgesState([]);
     const [ form ] = Form.useForm();
-    const transtle = useTranslate();
-    const [ buttons, setButtons ] = useState([]);
-    const [ addNew, setAddNew ] = useState(true);
-    const [ nodePositions, setNodePositions ] = useState([
-        {
-            id: 'card_0_root',
-            left: 50,
-            top: 50,
-        },
-    ]);
-    const isDraggingCanvas = useRef(false);
-    const initialMousePos = useRef({ x: 0, y: 0 });
-    const [ clickMove, setClickMove ] = useState(false);
-    const [ scaleContainer, setScaleContainer ] = useState(1);
-    const [ coordinate, setCoordinate ] = useState({ maxLeft: 0, maxTop: 0 });
-    const nodePositionsRef = useRef(nodePositions);
-    const buttonsRef = useRef(buttons);
-    const clickMoveRef = useRef(false);
-    const [ nodes, setNodes ] = useState([
-        {
-            id: 'card_0_root',
-            left: 50,
-            top: 50,
-            buttons: buttonArray,
-            position: [ 50, 50 ],
-        },
-    ]);
-    const { execute: executeUpdate, loading: loadingUpdate } = useFetch(apiConfig.game.question.update, {
-        immediate: false,
-    });
+    const queryParameters = new URLSearchParams(window.location.search);
+    const questionId = queryParameters.get('questionId');
+    const accessToken = queryParameters.get('accessToken');
+    const [ hoveredEdgeId, setHoveredEdgeId ] = useState(null); // Theo dõi edge đang hover
+    const [ isModalVisible, setIsModalVisible ] = useState(false); // Điều khiển popup
+    const [ edgeToDelete, setEdgeToDelete ] = useState(null); // Lưu edge cần xóa
+    const [ nodeToDelete, setNodeToDelete ] = useState(null); // Lưu edge cần xóa
+    const [ isModalDeleteNote, setIsModalDeleteNote ] = useState(false);
     const {
         execute: executeGetById,
-        data: dataQuestion,
+        data: dataExp,
         loading,
     } = useFetch(apiConfig.game.question.getById, {
         immediate: false,
@@ -60,78 +48,12 @@ const Dashboard = () => {
             };
         },
     });
-
-    const queryParameters = new URLSearchParams(window.location.search);
-    const questionId = queryParameters.get('questionId');
-    const accessToken = queryParameters.get('accessToken');
-    const gameId = queryParameters.get('gameId');
-    const panzoomRef = useRef(null);
-
-    const handleZoom = (direction) => {
-        const panzoom = panzoomRef.current;
-        const currentScale = panzoom.getScale();
-        setScaleContainer(currentScale);
-
-        if (direction === 'in') {
-            panzoom.zoom(currentScale + 0.1, { animate: true });
-        } else if (direction === 'out' && currentScale > 0.2) {
-            panzoom.zoom(currentScale - 0.1, { animate: true });
-        }
-    };
-
-    const instance = jsPlumb.jsPlumb.getInstance({
-        Container: diagramRef.current,
-    });
     const handleGetList = () => {
         executeGetById({
             pathParams: {
                 id: questionId,
             },
             accessToken: accessToken,
-            onCompleted: async ({ data }) => {
-                let nodeArray = nodes;
-                const content = data?.data;
-                if (content?.length > 0) {
-                    const topChild = 50;
-                    const leftChild = 50;
-                    nodeArray = content.map((item) => {
-                        item?.buttons?.forEach((record) => {
-                            if (record != null) {
-                                const indexChild = content.findIndex(({ id }) => id == record.nodeId);
-                                form.setFieldsValue({
-                                    [`name${indexChild}`]: record?.name || item?.name,
-                                });
-                            }
-                        });
-                        setButtons((prev) => [ ...prev, item.buttons ]);
-                        return {
-                            id: item.id,
-                            left: item.position[0] || leftChild,
-                            top: item.position[1] || topChild,
-                            buttons: item.buttons,
-                            position: item.position,
-                        };
-                    });
-                    const nodePlace = content.map((item, index) => {
-                        return {
-                            id: item.id,
-                            left: item.position[0] || leftChild,
-                            top: item.position[1] || topChild,
-                        };
-                    });
-                    setNodePositions(nodePlace);
-                    for (const [ index, item ] of data.data.entries()) {
-                        form.setFieldsValue({
-                            [`id${index}`]: item.id,
-                            [`img_url${index}`]: item.img_url,
-                            [`body_text${index}`]: item.body_text,
-                            [`img_name${index}`]: item.img_name,
-                        });
-                    }
-                }
-
-                setNodes(nodeArray);
-            },
         });
     };
     useEffect(() => {
@@ -139,653 +61,345 @@ const Dashboard = () => {
             handleGetList();
         }
     }, [ questionId ]);
-    const bottomPositions = [
-        [ 0.1, 1, 0, 1 ], // Cách trái 20%
-        [ 0.36, 1, 0, 1 ], // Cách trái 40%
-        [ 0.64, 1, 0, 1 ], // Cách trái 60%
-        [ 0.9, 1, 0, 1 ], // Cách trái 80%
-    ];
 
     useEffect(() => {
-        instanceRef.current = instance;
-
-        function addEndpoints(nodeId) {
-            // Add one endpoint at the top
-            instance.addEndpoint(nodeId, {
-                endpoint: 'Dot',
-                anchor: 'TopCenter',
-                isSource: false,
-                isTarget: true,
-                maxConnections: -1,
-                paintStyle: { fill: '#4a6298', stroke: '#4a6298' },
-                connectorOverlays: [ [ 'Arrow', { width: 10, length: 10, location: 1 } ] ],
-            });
-
-            bottomPositions.forEach((pos) => {
-                instance.addEndpoint(nodeId, {
-                    endpoint: 'Dot',
-                    anchor: pos, // Sử dụng tọa độ tùy chỉnh
-                    isSource: true,
-                    isTarget: true,
-                    maxConnections: -1,
-                    paintStyle: { fill: '#4a6298' },
-                });
-            });
-        }
-
-        if (nodes?.length > 0 && nodePositions?.length > 0) {
-            nodes.forEach(({ id }) => {
-                const instance = instanceRef.current;
-                instance.draggable(id, {
-                    stop: ({ finalPos }) => {
-                        // const { left, top } = params.el.style;
-                        const nodePlace = nodePositions.map((item, index) => {
-                            if (item.id == id) {
-                                return {
-                                    id: item.id,
-                                    left: finalPos[0],
-                                    top: finalPos[1],
-                                };
-                            }
-                            return item;
-                        });
-                        setNodePositions(nodePlace);
+        if (dataExp?.data?.length > 0) {
+            const initialNodes = dataExp.data.map((item) => {
+                return {
+                    id: item.id,
+                    type: 'custom',
+                    position: { x: item.position[0], y: item.position[1] },
+                    data: {
+                        id: item.id,
+                        name: item.name,
+                        body_text: item.body_text,
+                        img_url: item.img_url,
+                        img_name: item.img_name,
+                        buttons: item.buttons,
+                        isError: false,
+                        onUpdate: (updatedData) => {
+                            setNodes((nds) =>
+                                nds.map((node) =>
+                                    node.id === item.id ? { ...node, data: { ...node.data, ...updatedData } } : node,
+                                ),
+                            );
+                        },
+                        onDelete: () => {
+                            setIsModalDeleteNote(true);
+                            setNodeToDelete(item.id);
+                        },
                     },
-                });
-                addEndpoints(id);
+                };
             });
-            handleConect();
-        }
-
-        instance.bind('beforeDrop', function (info) {
-            const sourceAnchor = info.connection.endpoints[0].anchor.x;
-            const sourceIndex = bottomPositions.findIndex((pos) => pos[0] == sourceAnchor);
-
-            const sourceNumber = nodes.findIndex((item) => item.id == info?.sourceId);
-            const targetNumber = nodes.findIndex((item) => item.id == info?.targetId);
-            const buttons = buttonsRef.current;
-            const buttonArrays = buttons[sourceNumber].map((item, index) => {
-                if (index == sourceIndex) {
-                    return {
-                        name: form.getFieldValue(`name${targetNumber}`) || 'computer',
-                        nodeId: info.targetId,
-                    };
-                } else return item;
+            const initialValues = {};
+            initialNodes.forEach((node) => {
+                initialValues[`id-${node.id}`] = node.id;
+                initialValues[`name-${node.id}`] = node.data.name;
+                initialValues[`body_text-${node.id}`] = node.data.body_text;
+                initialValues[`img_url-${node.id}`] = node.data.img_url;
+                initialValues[`img_name-${node.id}`] = node.data.img_name;
             });
-            setButtons((prev) => {
-                const newButtons = [ ...prev ];
-                newButtons[sourceNumber] = buttonArrays;
-                return newButtons;
-            });
-            return (
-                info.dropEndpoint.anchor.type === 'TopCenter' &&
-                bottomPositions.includes(info.targetEndpoint.anchor.type)
-            );
-        });
+            form.setFieldsValue(initialValues);
+            const initialEdges = dataExp.data.flatMap(
+                (item) =>
+                    item.buttons
+                        .map((btn, index) => {
+                            // Nếu btn là null, không tạo edge
+                            if (!btn) return null;
 
-        instance.bind('click', function (connection) {
-            if (window.confirm('Bạn có muốn xóa đường nối này không?')) {
-                const sourceNumber = nodes.findIndex((item) => item.id == connection.sourceId);
-                const sourceAnchor = connection.endpoints[0].anchor.x;
-                const sourceIndex = bottomPositions.findIndex((pos) => pos[0] == sourceAnchor);
-                const buttonArrays = buttons[sourceNumber].map((item, index) => {
-                    if (index == sourceIndex) {
-                        return null;
-                    } else return item;
-                });
-                setButtons((prev) => {
-                    const newButtons = [ ...prev ];
-                    newButtons[sourceNumber] = buttonArrays;
-                    return newButtons;
-                });
-                instance.deleteConnection(connection);
-            }
-        });
-
-        instance.importDefaults({
-            Connector: [ 'Straight' ],
-            PaintStyle: {
-                stroke: '#4a6298',
-                strokeWidth: 6,
-            },
-        });
-
-        return () => {
-            instance.reset(); // Cleanup khi unmount
-        };
-    }, [ nodes, nodePositions ]);
-    useEffect(() => {
-        if (clickMove) {
-            panzoomRef.current = Panzoom(diagramRef.current, {
-                minScale: 0.2,
-                maxScale: 10,
-                step: 0.1,
-                contain: 'inside',
-                disableOnTarget: [ 'node' ],
-                // disableZoom: false,
-                // disablePan: true,
-            });
-            if (scaleContainer <= 0.7) {
-                panzoomRef.current.zoom(scaleContainer, { animate: false });
-            }
-
-            const diagram = diagramRef.current;
-            diagram.addEventListener('panzoomzoom', (e) => {
-                instance.setZoom(e.detail.scale);
-                instance.repaintEverything();
-            });
-
-            return () => {
-                panzoomRef.current.destroy();
-            };
-        }
-    }, [ clickMove ]);
-    // useEffect(() => {
-    //     const diagram = diagramRef.current;
-    //     const handleMouseDown = (e) => {
-    //         // Chỉ bắt đầu kéo nếu không nhấn trên node
-    //         if (!e.target.closest(`.${styles.node}`)) {
-    //             // diagram.classList.add(styles.dragging);
-    //             isDraggingCanvas.current = true;
-    //             initialMousePos.current = { x: e.clientX, y: e.clientY };
-    //         }
-    //     };
-
-    //     const handleMouseMove = (e) => {
-    //         if (isDraggingCanvas.current) {
-    //             const dx = e.clientX - initialMousePos.current.x;
-    //             const dy = e.clientY - initialMousePos.current.y;
-    //             // if (nodePositionsRef.current.length > 0) {
-    //             //     const array = nodePositionsRef.current.map((button, index) => {
-    //             //         return {
-    //             //             ...button,
-    //             //             left: button.left + dx,
-    //             //             top: button.top + dy,
-    //             //         };
-    //             //     });
-    //             //     setNodePositions(array);
-    //             // }
-    //             instance.repaintEverything();
-    //         }
-    //     };
-
-    //     const handleMouseUp = (e) => {
-    //         const dx = e.clientX - initialMousePos.current.x;
-    //         const dy = e.clientY - initialMousePos.current.y;
-    //         if (nodePositionsRef.current.length > 0 && isDraggingCanvas.current) {
-    //             const array = nodePositionsRef.current.map((button, index) => {
-    //                 return {
-    //                     ...button,
-    //                     left: button.left + dx,
-    //                     top: button.top + dy,
-    //                 };
-    //             });
-    //             setNodePositions(array);
-    //             handleConect();
-    //         }
-    //         isDraggingCanvas.current = false;
-    //     };
-
-    //     document.addEventListener('mousedown', handleMouseDown);
-    //     document.addEventListener('mousemove', handleMouseMove);
-    //     document.addEventListener('mouseup', handleMouseUp);
-
-    //     return () => {
-    //         diagram.removeEventListener('mousedown', handleMouseDown);
-    //         document.removeEventListener('mousemove', handleMouseMove);
-    //         document.removeEventListener('mouseup', handleMouseUp);
-    //     };
-    // }, []);
-    useEffect(() => {
-        buttonsRef.current = buttons;
-    }, [ buttons ]);
-    useEffect(() => {
-        nodePositionsRef.current = nodePositions;
-        const maxValues = nodePositions.reduce(
-            (acc, item) => ({
-                maxLeft: Math.max(acc.maxLeft, item.left),
-                maxTop: Math.max(acc.maxTop, item.top),
-            }),
-            { maxLeft: 0, maxTop: 0 },
-        );
-        const check = maxValues.maxLeft > window.innerWidth - 240 || maxValues.maxTop > window.innerHeight - 318;
-        const panzoom = panzoomRef.current;
-        if (check && panzoom && (scaleContainer > 0.6 || maxValues.maxLeft > 2500)) {
-            const number = Math.round((maxValues.maxLeft + 240 - window.innerWidth) / 240);
-            if (number == 2) {
-                setScaleContainer(scaleContainer - 0.4);
-                panzoom.zoom(scaleContainer - 0.4, { animate: true });
-            } else if (number > 2) {
-                setScaleContainer(scaleContainer - 0.1);
-                panzoom.zoom(scaleContainer - 0.1, { animate: true });
-            } else {
-                setScaleContainer(scaleContainer - 0.2);
-                panzoom.zoom(scaleContainer - 0.2, { animate: true });
-            }
-        }
-        setCoordinate(maxValues);
-    }, [ nodePositions ]);
-
-    const addNode = async () => {
-        const nodeCurrent = nodes[nodes.length - 1];
-        const match = nodeCurrent?.id.match(/(card_)(\d+)/);
-        const [ , field, index ] = match;
-        const newId = `card_${Number(index) + 1}`;
-        const innerWidth = window.innerWidth;
-        const innerHeight = Math.random() * 300;
-        const maxValues = nodePositions.reduce(
-            (acc, item) => ({
-                maxLeft: Math.max(acc.maxLeft, item.left),
-                maxTop: Math.max(acc.maxTop, item.top),
-            }),
-            { maxLeft: -Infinity, maxTop: -Infinity },
-        );
-        setAddNew(false);
-        const newNode = {
-            id: newId,
-            left: Math.round(maxValues.maxLeft + 240),
-            top: maxValues.maxLeft > innerWidth ? Math.round(innerHeight) : 50,
-            buttons: buttonArray,
-        };
-        setNodes((prevNodes) => [ ...prevNodes, newNode ]);
-        setButtons((prevNodes) => [ ...prevNodes, buttonArray ]);
-        setNodePositions((prevNodes) => [ ...prevNodes, newNode ]);
-
-        await new Promise((resolve) => setTimeout(resolve, 100));
-    };
-    const clearConnections = () => {
-        const instance = instanceRef.current;
-        if (instance) {
-            const connections = instance.getAllConnections();
-            if (connections.length > 0) {
-                instance.deleteEveryConnection();
-            }
-        }
-    };
-
-    const handleConect = () => {
-        const instance = instanceRef.current;
-        const connect = () => {
-            for (let i = 0; i < nodes.length; i++) {
-                const currentNode = nodes[i].id;
-                if (buttons[i]?.[0] != null) {
-                    const nextNode = nodes.find((node) => node.id === buttons[i][0].nodeId)?.id;
-                    instance.connect({
-                        source: currentNode,
-                        target: nextNode,
-                        anchors: [ bottomPositions[0], 'TopCenter' ],
-                        connector: [ 'Straight' ],
-                        paintStyle: { fill: '#4a6298', stroke: '#4a6298', strokeWidth: 6 },
-                        overlays: [ [ 'Arrow', { width: 10, length: 10, location: 1 } ] ],
-                    });
-                }
-                if (buttons[i]?.[1] != null) {
-                    const nextNode = nodes.find((node) => node.id === buttons[i]?.[1]?.nodeId)?.id;
-                    instance.connect({
-                        source: currentNode,
-                        target: nextNode,
-                        anchors: [ bottomPositions[1], 'TopCenter' ],
-                        connector: [ 'Straight' ],
-                        paintStyle: { fill: '#4a6298', stroke: '#4a6298', strokeWidth: 6 },
-                        overlays: [ [ 'Arrow', { width: 10, length: 10, location: 1 } ] ],
-                    });
-                }
-                if (buttons[i]?.[2] != null) {
-                    const nextNode = nodes.find((node) => node.id === buttons[i]?.[2]?.nodeId)?.id;
-                    instance.connect({
-                        source: currentNode,
-                        target: nextNode,
-                        anchors: [ bottomPositions[2], 'TopCenter' ],
-                        connector: [ 'Straight' ],
-                        paintStyle: { fill: '#4a6298', stroke: '#4a6298', strokeWidth: 6 },
-                        overlays: [ [ 'Arrow', { width: 10, length: 10, location: 1 } ] ],
-                    });
-                }
-                if (buttons[i]?.[3] != null) {
-                    const nextNode = nodes.find((node) => node.id === buttons[i]?.[3]?.nodeId)?.id;
-                    instance.connect({
-                        source: currentNode,
-                        target: nextNode,
-                        anchors: [ bottomPositions[3], 'TopCenter' ],
-                        connector: [ 'Straight' ],
-                        paintStyle: { fill: '#4a6298', stroke: '#4a6298', strokeWidth: 6 },
-                        overlays: [ [ 'Arrow', { width: 10, length: 10, location: 1 } ] ],
-                    });
-                }
-            }
-        };
-        if (addNew) {
-            setTimeout(() => {
-                connect();
-            }, 20);
-        } else connect();
-    };
-    function getAllNodePositions() {
-        if (!instanceRef.current) return;
-
-        const instance = instanceRef.current;
-        const positions = nodes.map(({ id }) => {
-            const offset = instance.getOffset(id); // Lấy vị trí top, left của node
-            return { id, left: offset.left, top: offset.top };
-        });
-        return positions;
-    }
-
-    const DragTable = useCallback(() => {
-        if (nodes?.length > 0 && nodePositions?.length > 0) {
-            return nodes.map(({ id }, index) => {
-                const match = id.match(/(card_)(\d+)/);
-                // const [ , field, index ] = match;
-                const left = nodePositions[index]?.left;
-                const top = nodePositions[index]?.top;
-                return (
-                    <>
-                        <div
-                            className={styles.coverDiv}
-                            style={{
-                                left: 0,
-                                top: 0,
-                                width: coordinate.maxLeft + 240,
-                                height: coordinate.maxTop + 318,
-                                display: !clickMoveRef.current && 'none',
-                            }}
-                        ></div>
-                        <div key={id} id={id} className={styles.node} style={{ left, top }}>
-                            <ChildrenItem index={index} key={id} id={id} left={left} top={top} />
-                        </div>
-                    </>
-                );
-            });
-        }
-        return <></>;
-    }, [ nodes, nodePositions ]);
-
-    const handleSubmit = () => {
-        const values = form.getFieldsValue();
-        const data = [];
-
-        const offset = getAllNodePositions();
-        Object.entries(values).forEach(([ key, value ]) => {
-            const match = key.match(/(body_text|img_name|img_url|name)(\d+)/);
-            if (match) {
-                const [ , field, index ] = match;
-                let buttonArray = [ null, null, null, null ];
-                if (buttons[index]) {
-                    buttonArray = buttons[index].map((item) => {
-                        if (item != null) {
-                            const indexChild = nodes?.data?.findIndex(({ id }) => id === item.nodeId);
                             return {
-                                name: values[`name${indexChild}`],
-                                nodeId: item.nodeId,
+                                id: `${item.id}-${Math.random() * 500}`,
+                                source: item.id,
+                                target: btn.nodeId,
+                                sourceHandle: `bottom${index}`, // Đảm bảo khớp với bottom1, bottom2, bottom3, bottom4
+                                targetHandle: 'top',
+                                // type: 'straight',
+                                style: { stroke: '#1890ff', strokeWidth: 3 },
                             };
-                        }
-                        return item;
-                    });
+                        })
+                        .filter((edge) => edge !== null), // Lọc bỏ các edge null sau khi map
+            );
+            setNodes(initialNodes);
+            setEdges(initialEdges);
+        }
+    }, [ setNodes, setEdges, dataExp ]);
+    const onConnect = useCallback(
+        (params) => {
+            const { source, target, sourceHandle } = params;
+            const values = form.getFieldsValue();
+            setEdges((eds) => {
+                // Tìm edge hiện tại từ sourceHandle
+                const existingEdge = eds.find(
+                    (edge) => edge.source === params.source && edge.sourceHandle === params.sourceHandle,
+                );
+
+                let updatedEdges = eds;
+                if (existingEdge) {
+                    updatedEdges = eds.filter((edge) => edge.id !== existingEdge.id);
                 }
-                const nodeCurrent = nodes.find((node) => {
-                    const match = node.id.match(/(card_)(\d+)/);
-                    const [ , field, indexMatch ] = match;
-                    if (indexMatch === index) return node;
-                    return null;
-                });
-                const offsetCurrent = offset.find((node) => {
-                    const match = node.id.match(/(card_)(\d+)/);
-                    const [ , field, indexMatch ] = match;
-                    if (indexMatch === index) return node;
-                    return null;
-                });
-                if (nodeCurrent) {
-                    if (!data[index]) data[index] = {};
-                    data[index][field] = value;
-                    data[index].id = nodeCurrent.id;
-                    data[index].buttons = buttonArray;
-                    data[index].position = [ offsetCurrent.left, offsetCurrent.top ];
-                }
+
+                return addEdge({ ...params, style: { stroke: '#1890ff', strokeWidth: 3 } }, updatedEdges);
+            });
+            setNodes((nds) =>
+                nds.map((node) => {
+                    if (node.id === source) {
+                        const index = directionDot.findIndex((dot) => dot === sourceHandle); // Lấy index từ sourceHandle
+                        const newButtons = [ ...(node.data.buttons || [ null, null, null, null ]) ];
+                        newButtons[index] = { name: values[`name-${target}`] || '', nodeId: target }; // Thêm button mới
+                        return {
+                            ...node,
+                            data: {
+                                ...node.data,
+                                buttons: newButtons,
+                            },
+                        };
+                    }
+                    return node;
+                }),
+            );
+        },
+        [ setEdges ],
+    );
+
+    // Xử lý sự kiện kéo qua canvas
+    const onDragOver = useCallback((event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+    }, []);
+
+    // Xử lý khi thả node vào canvas
+    const onDrop = useCallback(
+        (event) => {
+            event.preventDefault();
+            const type = event.dataTransfer.getData('application/reactflow');
+            if (!type) return;
+
+            const position = {
+                x: event.clientX - 100,
+                y: event.clientY - 50,
+            };
+
+            const newNodeId = `${type}-${Date.now()}`;
+            const newNode = {
+                id: newNodeId,
+                type: 'custom',
+                position,
+                data: {
+                    name: `${type} Node`,
+                    body_text: '',
+                    img_url: '',
+                    img_name: '',
+                    buttons: [ null, null, null, null ],
+                    onUpdate: (updatedData) => {
+                        setNodes((nds) =>
+                            nds.map((node) =>
+                                node.id === newNodeId ? { ...node, data: { ...node.data, ...updatedData } } : node,
+                            ),
+                        );
+                    },
+                },
+            };
+
+            setNodes((nds) => nds.concat(newNode));
+        },
+        [ setNodes ],
+    );
+
+    const addNode = () => {
+        let newNodeId = 0;
+        if (nodes?.length >= 10) {
+            const key = nodes.slice(-1)[0].id;
+            const [ field, lastChild ] = key.split('_');
+            newNodeId = parseInt(lastChild) + 1;
+        } else {
+            newNodeId = nodes?.length + 1;
+        }
+        const innerWidth = Math.random() * (window.innerWidth - 200);
+        const innerHeight = Math.random() * 300;
+        const maxPosition = nodes.reduce(
+            (max, node) => ({
+                x: Math.max(max.x, node.position.x),
+                y: Math.max(max.y, node.position.y),
+            }),
+            { x: 100, y: 100 }, // Giá trị khởi tạo
+        );
+        const newNode = {
+            id: `card_${newNodeId}`,
+            type: 'custom',
+            position: { x: Math.round(maxPosition.x + 240), y: Math.random() * 500 },
+            data: {
+                id: `card_${newNodeId}`,
+                name: '',
+                body_text: '',
+                img_url: '',
+                img_name: '',
+                buttons: [ null, null, null, null ],
+                isError: false,
+                onUpdate: (updatedData) => {
+                    setNodes((nds) =>
+                        nds.map((node) =>
+                            node.id === newNodeId ? { ...node, data: { ...node.data, ...updatedData } } : node,
+                        ),
+                    );
+                },
+                onDelete: () => {
+                    setIsModalDeleteNote(true);
+                    setNodeToDelete(`card_${newNodeId}`);
+                },
+            },
+        };
+        form.setFieldsValue({
+            [`name-card_${newNodeId}`]: '',
+            [`body_text-card_${newNodeId}`]: '',
+            [`img_url-card_${newNodeId}`]: '',
+            [`img_name-card_${newNodeId}`]: '',
+        });
+        setNodes((nds) => nds.concat(newNode));
+    };
+    const onValuesChange = (changedValues) => {
+        Object.keys(changedValues).forEach((key) => {
+            const [ field, nodeId ] = key.split('-');
+            const node = nodes.find((n) => n.id === nodeId);
+            if (node) {
+                node.data.onUpdate({ [field]: changedValues[key] });
             }
         });
-        const dataSend = data.filter((item) => item != null);
-
-        executeUpdate({
-            pathParams: { id: questionId },
-            data: {
-                data: dataSend,
-                languageId: dataQuestion.languageId,
-                title: dataQuestion.title,
-                type: dataQuestion.type,
-            },
-            accessToken: accessToken,
-            onCompleted: (res) => {
-                showSucsessMessage('Update success');
-                // clearConnections();
-                // handleConect();
-                // handleGetList();
-            },
-            onError: (res) => {
-                showErrorMessage('Update failed');
-            },
-        });
-    };
-    const ChildrenItem = ({ index, id }) => {
-        return (
-            <Flex gap={6} vertical style={{ paddingTop: index == 0 ? '12px' : 0 }}>
-                {index > 0 && (
-                    <Flex style={{ width: '100%' }} justify="end">
-                        <CloseSquareFilled
-                            style={{
-                                color: 'red',
-                                fontSize: 24,
-                                marginTop: '-8px',
-                                marginRight: '-10px',
-                            }}
-                            onClick={() => {
-                                const array = getAllConnections(instanceRef.current);
-                                const match = id.match(/(card_)(\d+)/);
-                                const [ , field, index ] = match;
-                                if (Object.keys(array).length > 0 && array[id]) {
-                                    const { incoming, outgoing } = array[id];
-                                    if (incoming.length > 0) {
-                                        incoming.forEach((item) => {
-                                            const { source, sourceAnchor } = item;
-                                            const sourceNumber = nodes.findIndex((item) => item.id == source);
-                                            const sourceIndex = bottomPositions.findIndex(
-                                                (pos) => pos[0] == sourceAnchor.x,
-                                            );
-                                            const buttons = buttonsRef.current;
-                                            const buttonArrays = buttons[sourceNumber].map((item, index) => {
-                                                if (index == sourceIndex) {
-                                                    return null;
-                                                } else return item;
-                                            });
-                                            setButtons((prev) => {
-                                                const newButtons = [ ...prev ];
-                                                newButtons[sourceNumber] = buttonArrays;
-                                                return newButtons;
-                                            });
-                                        });
-                                    }
-                                }
-                                form.setFieldsValue({
-                                    [`name${index}`]: '',
-                                    [`img_url${index}`]: null,
-                                    [`body_text${index}`]: '',
-                                    [`img_name${index}`]: '',
-                                });
-                                setButtons((prevNodes) => prevNodes.filter((item, i) => i != index));
-                                setNodes((prevNodes) => prevNodes.filter((item, i) => item.id !== id));
-                            }}
-                        />
-                    </Flex>
-                )}
-                <TextField name={`id${index}`} style={{ width: '100%' }} placeholder={'Name'} />
-                <TextField name={`name${index}`} style={{ width: '100%' }} placeholder={'Name'} />
-                <TextField
-                    name={`body_text${index}`}
-                    style={{ width: '100%', flex: 1 }}
-                    type="textarea"
-                    placeholder={'Description'}
-                />
-                <UploadImageField
-                    name={`img_url${index}`}
-                    objectName="image"
-                    aspect={16 / 9}
-                    accessToken={accessToken}
-                />
-                <TextField name={`img_name${index}`} style={{ width: '100%' }} placeholder={'Image Name'} />
-            </Flex>
-        );
     };
 
-    const removeField = (index = 0, fieldsToRemove = [ 'name', 'body_text' ]) => {
-        const currentValues = form.getFieldsValue();
-        const fieldsToDelete = fieldsToRemove.reduce((acc, field) => {
-            acc[`${field}${index}`] = undefined; // Tạo object với các key cần xóa
-            return acc;
-        }, {});
+    const onEdgeMouseEnter = useCallback((event, edge) => {
+        setHoveredEdgeId(edge.id);
+    }, []);
 
-        const filteredValues = Object.keys(currentValues)
-            .filter((key) => !Object.keys(fieldsToDelete).includes(key))
-            .map((key) => ({ name: key, value: currentValues[key] }));
+    const onEdgeMouseLeave = useCallback(() => {
+        setHoveredEdgeId(null);
+    }, []);
 
-        form.setFields(filteredValues);
-    };
-    return (
-        <div className={styles.container}>
-            <div style={{ height: '30px' }}>
-                <Button onClick={addNode}>Add Node</Button>
-                <Button onClick={() => handleSubmit()} disabled={nodes.length <= 1}>
-                    Save
-                </Button>
-                <Button
-                    onClick={() => {
-                        const panzoom = panzoomRef.current;
-                        if (scaleContainer >= 0.7 && panzoom) {
-                            panzoom.zoom(1, { animate: true });
+    // Xử lý click vào edge để hiển thị popup
+    const onEdgeClick = useCallback((event, edge) => {
+        setEdgeToDelete(edge);
+        setIsModalVisible(true);
+    }, []);
+
+    // Xác nhận xóa edge
+    const handleDeleteEdge = () => {
+        if (edgeToDelete) {
+            const indexDelete = directionDot.findIndex((dot) => dot === edgeToDelete.sourceHandle);
+            setEdges((eds) => eds.filter((e) => e.id !== edgeToDelete.id));
+            const dataSend = nodes.map((item, index) => {
+                const buttons = item.data.buttons;
+                let buttonArray = [ null, null, null, null ];
+                if (buttons) {
+                    buttonArray = buttons.map((itemButton, index) => {
+                        if (index == indexDelete) {
+                            return null;
                         }
-                        clickMoveRef.current = !clickMove;
-                        setClickMove(!clickMove);
-                    }}
-                >
-                    Move
-                </Button>
-                <Button onClick={() => handleZoom('in')} disabled={!clickMove}>
-                    Zoom In
-                </Button>
-                <Button onClick={() => handleZoom('out')} disabled={!clickMove}>
-                    Zoom Out
-                </Button>
-            </div>
-            {scaleContainer > 0.7 && !clickMoveRef.current ? (
-                <div
-                    id="diagram"
-                    className={styles.diagram}
-                    ref={diagramRef}
-                    style={{
-                        width: '100%',
-                        height: 'calc(100vh - 30px)',
-                        overflow: 'auto',
-                        position: 'relative',
-                        left: 0,
-                        top: 0,
-                    }}
-                >
-                    <Loading show={loading || loadingUpdate} />
-                    <Form form={form}>
-                        <DragTable />
-                    </Form>
-                </div>
-            ) : (
-                <div
-                    id="diagram"
-                    className={styles.diagram}
-                    ref={diagramRef}
-                    style={{
-                        width: '100%',
-                        position: 'relative',
-                    }}
-                >
-                    <Loading show={loading || loadingUpdate} />
-                    <Form form={form}>
-                        <DragTable />
-                    </Form>
-                </div>
-            )}
+                        return itemButton;
+                    });
+                }
+                if (item.id == edgeToDelete.source) {
+                    return {
+                        ...item,
+                        data: {
+                            ...item.data,
+                            buttons: buttonArray,
+                        },
+                    };
+                }
+                return {
+                    ...item,
+                };
+            });
+            setNodes(dataSend);
+        }
+        setIsModalVisible(false);
+        setEdgeToDelete(null);
+    };
+
+    // Hủy popup
+    const handleCancel = () => {
+        setIsModalVisible(false);
+        setEdgeToDelete(null);
+    };
+
+    const updatedEdges = edges.map((edge) => ({
+        ...edge,
+        style: {
+            ...edge.style,
+            strokeWidth: hoveredEdgeId === edge.id ? 5 : 3, // Tăng strokeWidth khi hover
+        },
+    }));
+
+    const handleDeleteNode = () => {
+        setNodes((nds) => nds.filter((node) => node.id !== nodeToDelete));
+        setEdges((eds) => eds.filter((edge) => edge.source !== nodeToDelete && edge.target !== nodeToDelete));
+        const fieldsToRemove = [
+            `name_${nodeToDelete}`,
+            `body_text_${nodeToDelete}`,
+            `img_url_${nodeToDelete}`,
+            `img_name_${nodeToDelete}`,
+        ];
+        form.setFields(fieldsToRemove.map((field) => ({ name: field, value: '' })));
+        setNodeToDelete(null);
+        setIsModalDeleteNote(false);
+    };
+
+    return (
+        <div className={styles.app}>
+            <Loading show={loading} />
+            <ReactFlowProvider>
+                <Header
+                    addNode={addNode}
+                    form={form}
+                    nodes={nodes}
+                    dataExp={dataExp}
+                    edges={edges}
+                    handleGetList={handleGetList}
+                    setNodes={setNodes}
+                />
+                <Form form={form} onValuesChange={onValuesChange} style={{ marginTop: 24 }}>
+                    <div className={styles.reactflowWrapper}>
+                        <ReactFlow
+                            nodes={nodes}
+                            edges={updatedEdges} // Sử dụng edges với style động
+                            onNodesChange={onNodesChange}
+                            onEdgesChange={onEdgesChange}
+                            onConnect={onConnect}
+                            onEdgeMouseEnter={onEdgeMouseEnter} // Xử lý hover
+                            onEdgeMouseLeave={onEdgeMouseLeave} // Xử lý rời hover
+                            onEdgeClick={onEdgeClick} // Xử lý click
+                            nodeTypes={nodeTypes}
+                            fitView
+                        >
+                            <Background />
+                            <Controls />
+                        </ReactFlow>
+                    </div>
+                </Form>
+            </ReactFlowProvider>
+            <Modal
+                title={<FormattedMessage defaultMessage={'Confirm delete connection'} />}
+                open={isModalVisible}
+                onOk={handleDeleteEdge}
+                onCancel={handleCancel}
+                okText={<FormattedMessage defaultMessage={'Delete'} />}
+                cancelText={<FormattedMessage defaultMessage={'Cancel'} />}
+            >
+                <p>Are you sure you want to delete this connection?</p>
+            </Modal>
+            <Modal
+                title={<FormattedMessage defaultMessage={'Confirm delete node'} />}
+                open={isModalDeleteNote}
+                onOk={handleDeleteNode}
+                onCancel={() => {
+                    setIsModalDeleteNote(false);
+                }}
+                okText="Delete"
+                cancelText="Cancel"
+            >
+                <p>Are you sure you want to delete this node?</p>
+            </Modal>
         </div>
     );
 };
 
-const buttonArray = [ null, null, null, null ];
-
-function getCardLevels(cards) {
-    const cardMap = new Map(); // Lưu trữ card theo id
-    const levels = {}; // Kết quả lưu cấp độ của từng card
-
-    // Tạo ánh xạ ID => Card
-    cards.forEach((card) => {
-        cardMap.set(card.id, card);
-    });
-
-    // Khởi tạo hàng đợi BFS với card gốc (root)
-    const queue = [ { id: 'card_0_root', level: 0 } ];
-    levels['card_0_root'] = 0; // Root có level = 0
-
-    while (queue.length > 0) {
-        const { id, level } = queue.shift(); // Lấy phần tử đầu tiên trong queue
-        const card = cardMap.get(id);
-
-        if (card && card.buttons) {
-            card.buttons.forEach((button) => {
-                if (button && button.nodeId && !(button.nodeId in levels)) {
-                    levels[button.nodeId] = level + 1; // Gán cấp độ
-                    queue.push({ id: button.nodeId, level: level + 1 }); // Đưa vào queue để duyệt tiếp
-                }
-            });
-        }
-    }
-
-    return levels;
-}
-
-function countLevel(cardLevels, targetCard, levelCard) {
-    const entries = Object.entries(cardLevels);
-
-    // Tìm vị trí của targetCard trong mảng
-    const targetIndex = entries.findIndex(([ key ]) => key == targetCard);
-
-    // Lọc các phần tử trước targetCard có level = 2
-    const count = entries.slice(0, targetIndex).filter(([ _, level ]) => level === levelCard).length;
-
-    return count;
-}
-
-const getAllConnections = (instance) => {
-    const connections = instance.getConnections();
-    const nodeConnections = {};
-
-    connections.forEach((conn) => {
-        const sourceId = conn.sourceId;
-        const targetId = conn.targetId;
-
-        // Thêm kết nối vào source node
-        if (!nodeConnections[sourceId]) {
-            nodeConnections[sourceId] = { outgoing: [], incoming: [] };
-        }
-        nodeConnections[sourceId].outgoing.push({
-            target: targetId,
-            sourceAnchor: conn.endpoints[0].anchor,
-            targetAnchor: conn.endpoints[1].anchor,
-        });
-
-        // Thêm kết nối vào target node
-        if (!nodeConnections[targetId]) {
-            nodeConnections[targetId] = { outgoing: [], incoming: [] };
-        }
-        nodeConnections[targetId].incoming.push({
-            source: sourceId,
-            sourceAnchor: conn.endpoints[0].anchor,
-            targetAnchor: conn.endpoints[1].anchor,
-        });
-    });
-    return nodeConnections;
-};
-
-export default Dashboard;
+export default FlowEditor;

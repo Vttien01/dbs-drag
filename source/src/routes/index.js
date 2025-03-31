@@ -1,7 +1,5 @@
 import PageNotAllowed from '@components/common/page/PageNotAllowed';
-import Dashboard from '@modules/dashboard';
-import FlowEditor from '@modules/dashboard/FlowEditor';
-import { flow } from 'lodash';
+import FlowEditor from '@modules/dashboard';
 
 /*
 	auth
@@ -19,12 +17,6 @@ const routes = {
     homePage: {
         path: '/dashboard',
         component: FlowEditor,
-        auth: true,
-        title: 'Home',
-    },
-    flowEditor: {
-        path: '/flow-editor',
-        component: Dashboard,
         auth: true,
         title: 'Home',
     },
