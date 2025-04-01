@@ -9,14 +9,15 @@ import {
     ReactFlowProvider,
     useEdgesState,
     useNodesState,
+    useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Form, Modal } from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
 import { FormattedMessage } from 'react-intl';
 import CustomNode from './CustomNode';
-import styles from './index.module.scss';
 import Header from './Header';
+import styles from './index.module.scss';
 
 const nodeTypes = {
     custom: CustomNode,
@@ -36,6 +37,7 @@ const FlowEditor = () => {
     const [ edgeToDelete, setEdgeToDelete ] = useState(null); // Lưu edge cần xóa
     const [ nodeToDelete, setNodeToDelete ] = useState(null); // Lưu edge cần xóa
     const [ isModalDeleteNote, setIsModalDeleteNote ] = useState(false);
+
     const {
         execute: executeGetById,
         data: dataExp,
@@ -63,6 +65,17 @@ const FlowEditor = () => {
     }, [ questionId ]);
 
     useEffect(() => {
+        let initialArray = [
+            {
+                id: 'card_0_root',
+                name: 'Welcome to cyber security!',
+                buttons: [ null, null, null, null ],
+                img_url: null,
+                img_name: '',
+                position: [ 222, 41 ],
+                body_text: '',
+            },
+        ];
         if (dataExp?.data?.length > 0) {
             const initialNodes = dataExp.data.map((item) => {
                 return {
@@ -121,42 +134,83 @@ const FlowEditor = () => {
             );
             setNodes(initialNodes);
             setEdges(initialEdges);
+        } else {
+            const initialNodes = initialArray.map((item) => {
+                return {
+                    id: item.id,
+                    type: 'custom',
+                    position: { x: item.position[0], y: item.position[1] },
+                    data: {
+                        id: item.id,
+                        name: item.name,
+                        body_text: item.body_text,
+                        img_url: item.img_url,
+                        img_name: item.img_name,
+                        buttons: item.buttons,
+                        isError: false,
+                        onUpdate: (updatedData) => {
+                            setNodes((nds) =>
+                                nds.map((node) =>
+                                    node.id === item.id ? { ...node, data: { ...node.data, ...updatedData } } : node,
+                                ),
+                            );
+                        },
+                        onDelete: () => {
+                            setIsModalDeleteNote(true);
+                            setNodeToDelete(item.id);
+                        },
+                    },
+                };
+            });
+            const initialValues = {};
+            initialNodes.forEach((node) => {
+                initialValues[`id-${node.id}`] = node.id;
+                initialValues[`name-${node.id}`] = node.data.name;
+                initialValues[`body_text-${node.id}`] = node.data.body_text;
+                initialValues[`img_url-${node.id}`] = node.data.img_url;
+                initialValues[`img_name-${node.id}`] = node.data.img_name;
+            });
+            form.setFieldsValue(initialValues);
+            setNodes(initialNodes);
+            setEdges([]);
         }
     }, [ setNodes, setEdges, dataExp ]);
     const onConnect = useCallback(
         (params) => {
             const { source, target, sourceHandle } = params;
             const values = form.getFieldsValue();
-            setEdges((eds) => {
-                // Tìm edge hiện tại từ sourceHandle
-                const existingEdge = eds.find(
-                    (edge) => edge.source === params.source && edge.sourceHandle === params.sourceHandle,
-                );
+            if (source != target) {
+                setEdges((eds) => {
+                    // Tìm edge hiện tại từ sourceHandle
+                    const existingEdge = eds.find(
+                        (edge) => edge.source === params.source && edge.sourceHandle === params.sourceHandle,
+                    );
 
-                let updatedEdges = eds;
-                if (existingEdge) {
-                    updatedEdges = eds.filter((edge) => edge.id !== existingEdge.id);
-                }
-
-                return addEdge({ ...params, style: { stroke: '#1890ff', strokeWidth: 3 } }, updatedEdges);
-            });
-            setNodes((nds) =>
-                nds.map((node) => {
-                    if (node.id === source) {
-                        const index = directionDot.findIndex((dot) => dot === sourceHandle); // Lấy index từ sourceHandle
-                        const newButtons = [ ...(node.data.buttons || [ null, null, null, null ]) ];
-                        newButtons[index] = { name: values[`name-${target}`] || '', nodeId: target }; // Thêm button mới
-                        return {
-                            ...node,
-                            data: {
-                                ...node.data,
-                                buttons: newButtons,
-                            },
-                        };
+                    let updatedEdges = eds;
+                    if (existingEdge) {
+                        updatedEdges = eds.filter((edge) => edge.id !== existingEdge.id);
                     }
-                    return node;
-                }),
-            );
+
+                    return addEdge({ ...params, style: { stroke: '#1890ff', strokeWidth: 3 } }, updatedEdges);
+                });
+                setNodes((nds) =>
+                    nds.map((node) => {
+                        if (node.id === source) {
+                            const index = directionDot.findIndex((dot) => dot === sourceHandle); // Lấy index từ sourceHandle
+                            const newButtons = [ ...(node.data.buttons || [ null, null, null, null ]) ];
+                            newButtons[index] = { name: values[`name-${target}`] || '', nodeId: target }; // Thêm button mới
+                            return {
+                                ...node,
+                                data: {
+                                    ...node.data,
+                                    buttons: newButtons,
+                                },
+                            };
+                        }
+                        return node;
+                    }),
+                );
+            }
         },
         [ setEdges ],
     );
@@ -368,7 +422,8 @@ const FlowEditor = () => {
                             onEdgeMouseLeave={onEdgeMouseLeave} // Xử lý rời hover
                             onEdgeClick={onEdgeClick} // Xử lý click
                             nodeTypes={nodeTypes}
-                            fitView
+                            // fitView
+                            defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
                         >
                             <Background />
                             <Controls />

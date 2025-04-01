@@ -27,17 +27,19 @@ const CustomNode = ({ data }) => {
             style={{ background: data.id == 'card_0_root' ? 'blue' : '#6c6c6c' }}
             data-error-node={data.isError}
         >
-            <Handle
-                type="target"
-                position="top"
-                id="top"
-                style={{
-                    width: '20px', // Đường kính lớn hơn (khoảng 4px mỗi bên)
-                    height: '20px',
-                    background: '#1890ff', // Màu xanh
-                    borderRadius: '50%', // Hình tròn
-                }}
-            />
+            {data.id != 'card_0_root' && (
+                <Handle
+                    type="target"
+                    position="top"
+                    id="top"
+                    style={{
+                        width: '20px', // Đường kính lớn hơn (khoảng 4px mỗi bên)
+                        height: '20px',
+                        background: '#1890ff', // Màu xanh
+                        borderRadius: '50%', // Hình tròn
+                    }}
+                />
+            )}
 
             <Flex gap={6} vertical>
                 <Tooltip title="Delete">
