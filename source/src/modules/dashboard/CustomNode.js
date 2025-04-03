@@ -42,18 +42,20 @@ const CustomNode = ({ data }) => {
             )}
 
             <Flex gap={6} vertical>
-                <Tooltip title="Delete">
-                    <CloseSquareFilled
-                        style={{
-                            color: 'red',
-                            fontSize: 24,
-                            position: 'absolute',
-                            top: '-2px',
-                            right: '-2px',
-                        }}
-                        onClick={handleDeleteClick}
-                    />
-                </Tooltip>
+                {data.id != 'card_0_root' && (
+                    <Tooltip title="Delete">
+                        <CloseSquareFilled
+                            style={{
+                                color: 'red',
+                                fontSize: 24,
+                                position: 'absolute',
+                                top: '-2px',
+                                right: '-2px',
+                            }}
+                            onClick={handleDeleteClick}
+                        />
+                    </Tooltip>
+                )}
                 <TextField name={`name-${data.id}`} style={{ width: '100%' }} placeholder={'Name'} />
                 <TextField
                     name={`body_text-${data.id}`}
