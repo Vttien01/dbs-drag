@@ -15,7 +15,7 @@ const routes = {
         title: 'Page not allowed',
     },
     homePage: {
-        path: '/dashboard',
+        path: '/editor/cyoa',
         component: FlowEditor,
         auth: true,
         title: 'Home',

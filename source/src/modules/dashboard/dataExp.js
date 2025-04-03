@@ -7,14 +7,17 @@ export const dataExp = {
             name: 'Welcome to cyber security!',
             buttons: [
                 null,
-                null,
                 {
-                    name: 'Table',
+                    name: 'Free software',
+                    nodeId: 'card_2',
+                },
+                {
+                    name: 'USB problem 2',
                     nodeId: 'card_1',
                 },
                 {
-                    name: 'Software',
-                    nodeId: 'card_2',
+                    name: 'OKe eeee',
+                    nodeId: 'card_7',
                 },
             ],
             img_url:
@@ -29,11 +32,14 @@ export const dataExp = {
             buttons: [
                 null,
                 {
-                    name: 'Teacher',
+                    name: 'Result',
                     nodeId: 'card_3',
                 },
                 null,
-                null,
+                {
+                    name: 'Result',
+                    nodeId: 'card_4',
+                },
             ],
             img_url:
                 'https://cyberplusplus-beta-assets.s3.ap-southeast-1.amazonaws.com/images/133224d18e7f817d161e832b3ab8cf20fce63a64bf6642a134a71930d68729b3',
@@ -48,11 +54,11 @@ export const dataExp = {
                 null,
                 null,
                 {
-                    name: 'Bag',
+                    name: 'Result',
                     nodeId: 'card_5',
                 },
                 {
-                    name: 'School',
+                    name: 'Result',
                     nodeId: 'card_6',
                 },
             ],
@@ -105,11 +111,14 @@ export const dataExp = {
             buttons: [
                 null,
                 {
-                    name: 'School',
+                    name: 'Result',
                     nodeId: 'card_6',
                 },
                 null,
-                null,
+                {
+                    name: 'OKe eeee',
+                    nodeId: 'card_8',
+                },
             ],
             img_url:
                 'https://cyberplusplus-beta-assets.s3.ap-southeast-1.amazonaws.com/images/7e8730c69ae0fe3697af856d83062910b46cd8ec40fb05e3864dd5b5f4640f59',
@@ -123,19 +132,22 @@ export const dataExp = {
             buttons: [
                 null,
                 {
-                    name: 'School',
+                    name: 'Result',
                     nodeId: 'card_6',
                 },
-                null,
                 {
-                    name: 'No',
+                    name: 'OKe eeee',
                     nodeId: 'card_9',
+                },
+                {
+                    name: '',
+                    nodeId: 'card_10',
                 },
             ],
             img_url:
                 'https://cyberplusplus-beta-assets.s3.ap-southeast-1.amazonaws.com/images/3c3b56f917ab29f34a97384e83ace5900eb8a0eb5fc1b9b97d8574fdcd8b490e',
             img_name: 'OKe eeee',
-            position: [ 1003, 218 ],
+            position: [ 1020.9132530120482, 353.62891566265057 ],
             body_text: '',
         },
         {
@@ -144,7 +156,16 @@ export const dataExp = {
             buttons: [ null, null, null, null ],
             img_url: '',
             img_name: 'OKe eeee',
-            position: [ 1175, 703 ],
+            position: [ 1228.7397590361447, 847.5855421686747 ],
+            body_text: '',
+        },
+        {
+            id: 'card_10',
+            name: '',
+            buttons: [ null, null, null, null ],
+            img_url: '',
+            img_name: '',
+            position: [ 1469, 231.07431224796383 ],
             body_text: '',
         },
     ],
