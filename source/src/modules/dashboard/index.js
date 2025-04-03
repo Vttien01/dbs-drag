@@ -68,7 +68,7 @@ const FlowEditor = () => {
         let initialArray = [
             {
                 id: 'card_0_root',
-                name: 'Welcome to cyber security!',
+                name: '',
                 buttons: [ null, null, null, null ],
                 img_url: null,
                 img_name: '',
@@ -423,7 +423,7 @@ const FlowEditor = () => {
                             onEdgeClick={onEdgeClick} // Xử lý click
                             nodeTypes={nodeTypes}
                             // fitView
-                            defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+                            defaultViewport={{ x: 0, y: 0, zoom: 0.7 }}
                         >
                             <Background />
                             <Controls />
