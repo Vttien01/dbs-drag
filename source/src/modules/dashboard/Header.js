@@ -14,17 +14,18 @@ const Header = ({ addNode, form, nodes, dataExp, handleGetList, edges, setNodes 
     };
     const queryParameters = new URLSearchParams(window.location.search);
     const questionId = queryParameters.get('questionId');
+    const languageId = queryParameters.get('languageId');
+    const gameId = queryParameters.get('gameId');
     const accessToken = queryParameters.get('accessToken');
     const { execute: executeUpdate, loading: loadingUpdate } = useFetch(apiConfig.game.question.update, {
         immediate: false,
     });
-    const handleCheckDot = () => {
-        return nodes;
-    };
+    const { execute: executeCreate, loading: loadingCreate } = useFetch(apiConfig.game.question.create, {
+        immediate: false,
+    });
     const handleSubmit = () => {
         const values = form.getFieldsValue();
-        const check = edges.map((item) => item.target);
-        const uniqueSources = [ ...new Set(check) ];
+        const uniqueSources = edges.map((item) => item.target);
         if (uniqueSources.length < nodes.length - 1) {
             const number = nodes.length - uniqueSources.length;
             showWarningMessage(`There are currently ${number} root nodes`);
@@ -75,23 +76,43 @@ const Header = ({ addNode, form, nodes, dataExp, handleGetList, edges, setNodes 
             };
         });
 
-        executeUpdate({
-            pathParams: { id: questionId },
-            data: {
-                data: dataSend,
-                languageId: dataExp.languageId,
-                title: dataExp.title,
-                type: dataExp.type,
-            },
-            accessToken: accessToken,
-            onCompleted: (res) => {
-                showSucsessMessage('Update success');
-                handleGetList();
-            },
-            onError: (res) => {
-                showErrorMessage('Update failed');
-            },
-        });
+        if (questionId) {
+            executeUpdate({
+                pathParams: { id: questionId },
+                data: {
+                    data: dataSend,
+                    languageId: dataExp.languageId,
+                    title: dataExp.title,
+                    type: dataExp.type,
+                },
+                accessToken: accessToken,
+                onCompleted: (res) => {
+                    showSucsessMessage('Update success');
+                    handleGetList();
+                },
+                onError: (res) => {
+                    showErrorMessage('Update failed');
+                },
+            });
+        } else {
+            executeCreate({
+                data: {
+                    data: dataSend,
+                    languageId: languageId || '1',
+                    title: 'CYOA Data',
+                    type: 'cyoa',
+                    gameId,
+                },
+                accessToken: accessToken,
+                onCompleted: ({ data }) => {
+                    showSucsessMessage('Create success');
+                    handleGetList(data.id);
+                },
+                onError: (res) => {
+                    showErrorMessage('Create failed');
+                },
+            });
+        }
     };
 
     return (

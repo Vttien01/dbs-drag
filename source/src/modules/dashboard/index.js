@@ -50,10 +50,10 @@ const FlowEditor = () => {
             };
         },
     });
-    const handleGetList = () => {
+    const handleGetList = (id) => {
         executeGetById({
             pathParams: {
-                id: questionId,
+                id: id || questionId,
             },
             accessToken: accessToken,
         });
