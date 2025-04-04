@@ -88,6 +88,9 @@ const Header = ({ addNode, form, nodes, dataExp, handleGetList, edges, setNodes 
                 accessToken: accessToken,
                 onCompleted: (res) => {
                     showSucsessMessage('Update success');
+                    setTimeout(() => {
+                        window.top.postMessage('closeEditor', '*');
+                    }, [ 800 ]);
                     handleGetList();
                 },
                 onError: (res) => {
@@ -106,6 +109,9 @@ const Header = ({ addNode, form, nodes, dataExp, handleGetList, edges, setNodes 
                 accessToken: accessToken,
                 onCompleted: ({ data }) => {
                     showSucsessMessage('Create success');
+                    setTimeout(() => {
+                        window.top.postMessage('closeEditor', '*');
+                    }, [ 800 ]);
                     handleGetList(data.id);
                 },
                 onError: (res) => {
