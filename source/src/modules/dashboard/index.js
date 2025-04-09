@@ -379,6 +379,7 @@ const FlowEditor = () => {
         ...edge,
         style: {
             ...edge.style,
+            stroke: '#1890ff',
             strokeWidth: hoveredEdgeId === edge.id ? 5 : 3, // Tăng strokeWidth khi hover
         },
     }));
